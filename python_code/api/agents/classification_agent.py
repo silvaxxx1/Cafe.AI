@@ -3,18 +3,18 @@ import os
 import json
 from copy import deepcopy
 from .utils import get_chatbot_response
-from openai import OpenAI
+from openai import AsyncOpenAI
 load_dotenv()
 
 class ClassificationAgent():
     def __init__(self):
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=os.getenv("RUNPOD_TOKEN"),
             base_url=os.getenv("RUNPOD_CHATBOT_URL"),
         )
         self.model_name = os.getenv("MODEL_NAME")
-    
-    def get_response(self,messages):
+
+    async def get_response(self, messages):
         messages = deepcopy(messages)
 
         system_prompt = """
@@ -31,18 +31,14 @@ class ClassificationAgent():
             "message": leave the message empty.
             }
             """
-        
-        input_messages = [
-            {"role": "system", "content": system_prompt},
-        ]
 
-        input_messages += messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
 
-        chatbot_output =get_chatbot_response(self.client,self.model_name,input_messages)
+        chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages, json_mode=True)
         output = self.postprocess(chatbot_output)
         return output
 
-    def postprocess(self,output):
+    def postprocess(self, output):
         try:
             output = json.loads(output)
             decision = output.get('decision', 'order_taking_agent')
@@ -51,13 +47,8 @@ class ClassificationAgent():
             decision = 'order_taking_agent'
             message  = ''
 
-        dict_output = {
+        return {
             "role": "assistant",
             "content": message,
-            "memory": {"agent":"classification_agent",
-                       "classification_decision": decision
-                      }
+            "memory": {"agent": "classification_agent", "classification_decision": decision}
         }
-        return dict_output
-
-    

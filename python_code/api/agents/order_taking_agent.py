@@ -1,48 +1,30 @@
 import os
 import json
-from .utils import get_chatbot_response,double_check_json_output
-from openai import OpenAI
+from .utils import get_chatbot_response
+from openai import AsyncOpenAI
 from copy import deepcopy
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class OrderTakingAgent():
-    def __init__(self, recommendation_agent):
-        self.client = OpenAI(
+    def __init__(self, recommendation_agent, menu_text: str):
+        self.client = AsyncOpenAI(
             api_key=os.getenv("RUNPOD_TOKEN"),
             base_url=os.getenv("RUNPOD_CHATBOT_URL"),
         )
         self.model_name = os.getenv("MODEL_NAME")
-
         self.recommendation_agent = recommendation_agent
-    
-    def get_response(self,messages):
+        self.menu_text = menu_text
+
+    async def get_response(self, messages):
         messages = deepcopy(messages)
-        system_prompt = """
-            You are a customer support Bot for a coffee shop called "Merry's way"
+        system_prompt = f"""
+            You are a customer support Bot for a coffee shop called "Fero Cafe"
 
             here is the menu for this coffee shop.
 
-            Cappuccino - $4.50
-            Jumbo Savory Scone - $3.25
-            Latte - $4.75
-            Chocolate Chip Biscotti - $2.50
-            Espresso shot - $2.00
-            Hazelnut Biscotti - $2.75
-            Chocolate Croissant - $3.75
-            Dark chocolate (Drinking Chocolate) - $5.00
-            Cranberry Scone - $3.50
-            Croissant - $3.25
-            Almond Croissant - $4.00
-            Ginger Biscotti - $2.50
-            Oatmeal Scone - $3.25
-            Ginger Scone - $3.50
-            Chocolate syrup - $1.50
-            Hazelnut syrup - $1.50
-            Carmel syrup - $1.50
-            Sugar Free Vanilla syrup - $1.50
-            Dark chocolate (Packaged Chocolate) - $3.00
+{self.menu_text}
 
             Things to NOT DO:
             * DON't ask how to pay by cash or Card.
@@ -50,94 +32,95 @@ class OrderTakingAgent():
             * Don't tell the user to go to place to get the order
 
 
-            You're task is as follows:
-            1. Take the User's Order
-            2. Validate that all their items are in the menu
-            3. if an item is not in the menu let the user and repeat back the remaining valid order
-            4. Ask them if they need anything else.
-            5. If they do then repeat starting from step 3
-            6. If they don't want anything else. Using the "order" object that is in the output. Make sure to hit all three points
-                1. list down all the items and their prices
-                2. calculate the total. 
-                3. Thank the user for the order and close the conversation with no more questions
+            Your task is as follows:
+            1. Take the User's Order. When the user mentions multiple items in one message, add ALL of them to the order list at once — never process items one at a time.
+            2. Validate that all items are in the menu.
+            3. If an item is not in the menu, tell the user and repeat back the remaining valid items.
+            4. Ask if they need anything else.
+            5. If they do, repeat from step 2.
+            6. If they don't want anything else, finalize the order:
+                1. List ALL items and their individual prices.
+                2. Calculate the correct total.
+                3. Thank the user and close the conversation.
 
-            The user message will contain a section called memory. This section will contain the following:
-            "order"
-            "step number"
-            please utilize this information to determine the next step in the process.
-            
+            IMPORTANT — Order state rules:
+            - The user message starts with "CURRENT ORDER STATE". This is the ground truth.
+            - You MUST carry forward every item in that order list. Never drop an item that is already in the order.
+            - Only add new items or remove items the user explicitly cancels.
+            - If the order state is empty, start fresh from what the user just said.
+
+            CRITICAL RULE — building the order list:
+            - First, count every distinct item the user has mentioned across the entire conversation.
+            - The "order" array MUST have one entry per item. Two items = two entries. Three items = three entries.
+            - NEVER merge two items into one entry. NEVER omit an item.
+
             produce the following output without any additions, not a single letter outside of the structure bellow.
             Your output should be in a structured json format like so. each key is a string and each value is a string. Make sure to follow the format exactly:
-            {
-            "chain of thought": Write down your critical thinking about what is the maximum task number the user is on write now. Then write down your critical thinking about the user input and it's relation to the coffee shop process. Then write down your thinking about how you should respond in the response parameter taking into consideration the Things to NOT DO section. and Focus on the things that you should not do. 
+            {{
+            "chain of thought": First, LIST every item name the user has mentioned (e.g. "User mentioned: Latte, Croissant"). Then count them. Then write your thinking about the task step and what NOT to do.
+            "item_count": The exact integer count of distinct items in the order.
             "step number": Determine which task you are on based on the conversation.
-            "order": this is going to be a list of jsons like so. [{"item":put the item name, "quanitity": put the number that the user wants from this item, "price":put the total price of the item }]
+            "order": A JSON array with exactly item_count entries. Each entry: {{"item": "<name>", "quantity": 1, "price": <price>}}. Example with TWO items: [{{"item": "Latte", "quantity": 1, "price": 4.75}}, {{"item": "Croissant", "quantity": 1, "price": 3.25}}]. If the user mentioned 2 items this array MUST have 2 objects.
             "response": write the a response to the user
-            }
+            }}
         """
 
         last_order_taking_status = ""
         asked_recommendation_before = False
-        for message_index in range(len(messages)-1,0,-1):
+        for message_index in range(len(messages) - 1, 0, -1):
             message = messages[message_index]
-            
-            agent_name = message.get("memory",{}).get("agent","")
+            agent_name = message.get("memory", {}).get("agent", "")
             if message["role"] == "assistant" and agent_name == "order_taking_agent":
                 step_number = message["memory"]["step number"]
                 order = message["memory"]["order"]
                 asked_recommendation_before = message["memory"]["asked_recommendation_before"]
                 last_order_taking_status = f"""
+                CURRENT ORDER STATE (you MUST include ALL of these items in your output order — do not drop any):
                 step number: {step_number}
                 order: {order}
                 """
                 break
 
-        messages[-1]['content'] = last_order_taking_status + " \n "+ messages[-1]['content']
+        messages[-1]['content'] = last_order_taking_status + " \n " + messages[-1]['content']
 
-        input_messages = [{"role": "system", "content": system_prompt}] + messages        
+        input_messages = [{"role": "system", "content": system_prompt}] + messages
 
-        chatbot_output = get_chatbot_response(self.client,self.model_name,input_messages)
+        chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages, json_mode=True)
 
-        # double check json 
-        chatbot_output = double_check_json_output(self.client,self.model_name,chatbot_output)
-
-        output = self.postprocess(chatbot_output,messages,asked_recommendation_before)
-
+        output = await self.postprocess(chatbot_output, messages, asked_recommendation_before)
         return output
 
-    def postprocess(self,output,messages,asked_recommendation_before):
+    async def postprocess(self, output, messages, asked_recommendation_before):
         try:
             output = json.loads(output)
         except json.JSONDecodeError:
             return {
                 "role": "assistant",
                 "content": "Sorry, I had trouble processing that. Could you repeat your order?",
-                "memory": {"agent":"order_taking_agent",
-                           "step number": "1",
-                           "order": [],
-                           "asked_recommendation_before": asked_recommendation_before}
+                "memory": {
+                    "agent": "order_taking_agent",
+                    "step number": "1",
+                    "order": [],
+                    "asked_recommendation_before": asked_recommendation_before
+                }
             }
 
         if type(output["order"]) == str:
             output["order"] = json.loads(output["order"])
 
         response = output['response']
-        if not asked_recommendation_before and len(output["order"])>0:
-            recommendation_output = self.recommendation_agent.get_recommendations_from_order(messages,output['order'])
+        if not asked_recommendation_before and len(output["order"]) > 0:
+            recommendation_output = await self.recommendation_agent.get_recommendations_from_order(messages, output['order'])
             response = recommendation_output['content']
             asked_recommendation_before = True
 
-        dict_output = {
+        return {
             "role": "assistant",
-            "content": response ,
-            "memory": {"agent":"order_taking_agent",
-                       "step number": output["step number"],
-                       "order": output["order"],
-                       "asked_recommendation_before": asked_recommendation_before
-                      }
+            "content": response,
+            "memory": {
+                "agent": "order_taking_agent",
+                "step number": output["step number"],
+                "order": output["order"],
+                "asked_recommendation_before": asked_recommendation_before
+            }
         }
-
-        
-        return dict_output
-
-    

@@ -1,47 +1,44 @@
 from dotenv import load_dotenv
 import os
-from .utils import get_chatbot_response,get_embedding
-from openai import OpenAI
+import asyncio
+from .utils import get_chatbot_response
+from openai import AsyncOpenAI
 from copy import deepcopy
 from pinecone import Pinecone
+from sentence_transformers import SentenceTransformer
 load_dotenv()
+
 
 class DetailsAgent():
     def __init__(self):
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=os.getenv("RUNPOD_TOKEN"),
             base_url=os.getenv("RUNPOD_CHATBOT_URL"),
         )
         self.model_name = os.getenv("MODEL_NAME")
 
-        embedding_url = os.getenv("RUNPOD_EMBEDDING_URL")
-        pinecone_key  = os.getenv("PINECONE_API_KEY")
-        self.rag_enabled = bool(embedding_url and pinecone_key)
+        pinecone_key = os.getenv("PINECONE_API_KEY")
+        self.rag_enabled = bool(pinecone_key)
 
         if self.rag_enabled:
-            self.embedding_client = OpenAI(
-                api_key=os.getenv("RUNPOD_TOKEN"),
-                base_url=embedding_url,
-            )
+            self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
             self.pc = Pinecone(api_key=pinecone_key)
             self.index_name = os.getenv("PINECONE_INDEX_NAME")
+            print("[DetailsAgent] RAG enabled — local embeddings + Pinecone.")
         else:
-            print("[DetailsAgent] RAG disabled — RUNPOD_EMBEDDING_URL or PINECONE_API_KEY not set.")
-    
-    def get_closest_results(self,index_name,input_embeddings,top_k=2):
+            print("[DetailsAgent] RAG disabled — PINECONE_API_KEY not set.")
+
+    def get_closest_results(self, index_name, embedding, top_k=2):
         index = self.pc.Index(index_name)
-        
-        results = index.query(
+        return index.query(
             namespace="ns1",
-            vector=input_embeddings,
+            vector=embedding,
             top_k=top_k,
             include_values=False,
             include_metadata=True
         )
 
-        return results
-
-    def get_response(self,messages):
+    async def get_response(self, messages):
         messages = deepcopy(messages)
 
         if not self.rag_enabled:
@@ -52,9 +49,18 @@ class DetailsAgent():
             }
 
         user_message = messages[-1]['content']
-        embedding = get_embedding(self.embedding_client,self.model_name,user_message)[0]
-        result = self.get_closest_results(self.index_name,embedding)
-        source_knowledge = "\n".join([x['metadata']['text'].strip()+'\n' for x in result['matches'] ])
+
+        # Run the sync embedding model in a thread so we don't block the event loop
+        loop = asyncio.get_event_loop()
+        embedding = await loop.run_in_executor(
+            None,
+            lambda: self.embedding_model.encode(user_message).tolist()
+        )
+
+        result = self.get_closest_results(self.index_name, embedding)
+        source_knowledge = "\n".join(
+            [x['metadata']['text'].strip() + '\n' for x in result['matches']]
+        )
 
         prompt = f"""
         Using the contexts below, answer the query.
@@ -65,21 +71,16 @@ class DetailsAgent():
         Query: {user_message}
         """
 
-        system_prompt = """ You are a customer support agent for a coffee shop called Merry's way. You should answer every question as if you are waiter and provide the neccessary information to the user regarding their orders """
+        system_prompt = "You are a customer support agent for a coffee shop called Fero Cafe. You should answer every question as if you are a waiter and provide the necessary information to the user regarding their orders."
         messages[-1]['content'] = prompt
         input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
 
-        chatbot_output =get_chatbot_response(self.client,self.model_name,input_messages)
-        output = self.postprocess(chatbot_output)
-        return output
+        chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages)
+        return self.postprocess(chatbot_output)
 
-    def postprocess(self,output):
-        output = {
+    def postprocess(self, output):
+        return {
             "role": "assistant",
             "content": output,
-            "memory": {"agent":"details_agent"
-                      }
+            "memory": {"agent": "details_agent"}
         }
-        return output
-
-    

@@ -30,9 +30,8 @@ Reply: { "output": { "role", "content", "memory" } }
 |---|---|---|
 | `RUNPOD_TOKEN` | Yes | Groq API key or RunPod token |
 | `RUNPOD_CHATBOT_URL` | Yes | `https://api.groq.com/openai/v1` (Groq) or RunPod endpoint |
-| `MODEL_NAME` | Yes | `llama-3.1-8b-instant` (Groq) or `meta-llama/Llama-3.1-8B-Instruct` |
-| `RUNPOD_EMBEDDING_URL` | No | Embedding endpoint — leave blank to disable details/RAG agent |
-| `PINECONE_API_KEY` | No | Required for RAG |
+| `MODEL_NAME` | Yes | `llama-3.3-70b-versatile` (Groq) or `meta-llama/Llama-3.1-8B-Instruct` |
+| `PINECONE_API_KEY` | No | Required for RAG (embeddings are local, no URL needed) |
 | `PINECONE_INDEX_NAME` | No | Required for RAG |
 
 ## Agent Pipeline
