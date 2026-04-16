@@ -10,6 +10,8 @@
 
 *Click to watch - opens directly in your browser*
 
+
+
 **What you'll see:**
 - Guard agent blocking off-topic questions
 - RAG-powered shop info (hours, location, menu details)
