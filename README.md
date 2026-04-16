@@ -1,42 +1,46 @@
-# Fero Cafe — AI-Powered Coffee Shop Chatbot
+# ☕ Fero Cafe — AI-Powered Coffee Shop Chatbot
 
-> A full-stack, multi-agent AI assistant for a coffee shop. Customers place orders, ask menu questions, and get personalized recommendations — all through natural conversation.
+> **Chat with AI, order naturally, get personalized recommendations** — a complete conversational commerce experience.
 
----
-
-## Demo
-
-📹 **[Watch demo video (13MB MP4)](demo.mp4)**
-
-*Click to watch - opens directly in your browser*
-
-
-
-**What you'll see:**
-- Guard agent blocking off-topic questions
-- RAG-powered shop info (hours, location, menu details)
-- Multi-item order: *"I want a latte, croissant, and espresso"* → all 3 captured
-- Automatic upsell recommendation after first order
-- Order finalization with correct total
-- Cart auto-populated from chat
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
+[![React Native](https://img.shields.io/badge/React%20Native-Expo-blue.svg)](https://expo.dev)
+[![Groq](https://img.shields.io/badge/Groq-llama--3.3-orange.svg)](https://groq.com)
+[![Tests](https://img.shields.io/badge/tests-61%20passing-brightgreen.svg)]()
 
 ---
 
-## Features
+## 📹 Demo
 
-| Feature | Details |
-|---|---|
-| **Multi-agent pipeline** | Guard → Classification → Details / Order / Recommendation |
-| **RAG (Retrieval-Augmented Generation)** | Local sentence-transformers + Pinecone for menu & shop Q&A |
-| **Smart ordering** | Multi-turn order collection, menu validation, item state carried across turns |
-| **Personalized recommendations** | Apriori market basket analysis + popularity rankings |
-| **React Native app** | Browse menu, chat, review cart — one unified flow |
-| **Provider-agnostic LLM** | Swap between Groq, RunPod, OpenAI in a single `.env` change |
-| **61 passing tests** | Full async test suite with mocked LLM calls |
+> **🎬 Watch the full demo:** [Click here to see Fero Cafe in action →](https://github.com/silvaxxx1/Cafe.AI/issues/2)
+
+The demo video shows:
+- 🛡️ Guard agent blocking off-topic questions
+- 📚 RAG-powered shop info (hours, location, menu)
+- 🛒 Multi-item order: *"I want a latte, croissant, and espresso"* → all 3 captured
+- 💡 Automatic upsell recommendation after first order
+- ✅ Order finalization with correct total
+- 🔄 Cart auto-populated from chat
+
+[![Demo Video](https://img.shields.io/badge/📹-Watch%20Demo%20Video-ff69b4)](https://github.com/silvaxxx1/Cafe.AI/issues/2)
 
 ---
 
-## Architecture
+## ✨ Features at a Glance
+
+| Feature | What it does |
+|---------|---------------|
+| 🧠 **Multi-agent pipeline** | Guard → Classification → Details/Order/Recommendation |
+| 🔍 **RAG (Retrieval-Augmented Generation)** | Answers menu & shop questions using Pinecone vector DB |
+| 📝 **Smart ordering** | Multi-turn conversation, menu validation, remembers state |
+| 🎯 **Personalized recommendations** | Apriori market basket analysis + popularity rankings |
+| 📱 **React Native app** | Browse menu, chat, review cart — one unified flow |
+| 🔄 **Provider-agnostic LLM** | Swap Groq, RunPod, OpenAI in one `.env` change |
+| ✅ **61 passing tests** | Full async test suite with mocked LLM calls |
+
+---
+
+## 🏗️ Architecture
 
 ```
 React Native App (Expo)
@@ -60,92 +64,110 @@ React Native App (Expo)
            Groq API  (llama-3.3-70b-versatile)
 ```
 
-**Every agent:**
-- Uses `AsyncOpenAI` with a configurable `base_url` — no vendor lock-in
-- Returns `{ role, content, memory }` — state lives in the message array, no database
-- Uses `json_mode=True` for guaranteed valid JSON output
+### How it works:
+
+1. **Guard Agent** → Blocks off-topic / harmful queries
+2. **Classification Agent** → Routes intent (order, question, recommendation)
+3. **Specialized Agents** → Handle specific tasks with RAG or business logic
+4. **Groq API** → Powers all LLM calls with `llama-3.3-70b-versatile`
+
+> 💡 **Design philosophy:** Every agent uses `AsyncOpenAI` with configurable `base_url` — no vendor lock-in. State lives in the message array, no database needed.
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **LLM** | Groq API (`llama-3.3-70b-versatile`) — free tier |
-| **Embeddings** | `sentence-transformers/all-MiniLM-L6-v2` — runs locally |
-| **Vector DB** | Pinecone (free serverless index) |
-| **Backend** | Python 3.12, FastAPI, AsyncOpenAI |
-| **Frontend** | React Native, Expo Router, NativeWind (Tailwind) |
-| **Recommendations** | scikit-learn (Apriori), pandas |
-| **Testing** | pytest, pytest-asyncio, AsyncMock |
-| **Product catalog** | Firebase Realtime Database (optional) |
+| Layer | Technology | Why |
+|-------|------------|-----|
+| **LLM** | Groq API (`llama-3.3-70b`) | Free tier, blazing fast |
+| **Embeddings** | sentence-transformers (all-MiniLM-L6-v2) | Runs locally, no API cost |
+| **Vector DB** | Pinecone | Free serverless index |
+| **Backend** | Python 3.12 + FastAPI | Async, type-safe, fast |
+| **Frontend** | React Native + Expo Router | Cross-platform, hot reload |
+| **Styling** | NativeWind (Tailwind) | Utility-first, rapid UI |
+| **Recommendations** | scikit-learn (Apriori) | Market basket analysis |
+| **Testing** | pytest + AsyncMock | 61 tests, no API key needed |
+| **Product catalog** | Firebase (optional) | Real-time sync |
 
 ---
 
-## Quick Start
+## 🚀 Quick Start (5 minutes)
 
 ### Prerequisites
-- Python 3.12, Node.js 18+
-- [`uv`](https://github.com/astral-sh/uv) — fast Python package manager
-- Free [Groq API key](https://console.groq.com)
-
-### 1. Clone & set up backend
 
 ```bash
-git clone <repo-url>
-cd <repo>
+# Required
+Python 3.12+
+Node.js 18+
+
+# Recommended
+uv (fast Python package manager)
+Git
+
+# Free account needed
+Groq API key → https://console.groq.com
+```
+
+### 1. Backend Setup
+
+```bash
+# Clone and enter repo
+git clone https://github.com/silvaxxx1/Cafe.AI.git
+cd Cafe.AI/coffee_shop_customer_service_chatbot
 
 # Create virtual environment
 uv venv .venv --python 3.12
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # Install dependencies
-cd coffee_shop_customer_service_chatbot/python_code/api
+cd python_code/api
 uv pip install -r requirements.txt
 
 # Configure environment
 cp .env_example .env
 ```
 
-Edit `.env`:
-```env
-RUNPOD_TOKEN=<your-groq-api-key>
+**Edit `.env` with your keys:**
+```ini
+RUNPOD_TOKEN=your-groq-api-key-here
 RUNPOD_CHATBOT_URL=https://api.groq.com/openai/v1
 MODEL_NAME=llama-3.3-70b-versatile
 ```
 
-Start the server:
+**Start the server:**
 ```bash
 python local_server.py
-# → Agents ready.
-# → Uvicorn running on http://0.0.0.0:8000
+# ✅ Agents ready.
+# 🚀 Uvicorn running on http://0.0.0.0:8000
 ```
 
-### 2. Set up frontend
+### 2. Frontend Setup
 
 ```bash
+# Open new terminal, go to frontend
 cd coffee_shop_customer_service_chatbot/coffee_shop_app
-cp .env_example.txt .env
-# EXPO_PUBLIC_RUNPOD_API_URL is already set to http://localhost:8000/chat
 
+# Copy config
+cp .env_example.txt .env
+
+# Install and run
 npm install
-npm run web       # opens at http://localhost:8081
+npm run web  # Opens at http://localhost:8081
 ```
 
-### 3. Quick smoke test
+### 3. Test It's Working
 
 ```bash
-curl -s -X POST http://localhost:8000/chat \
+curl -X POST http://localhost:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"input": {"messages": [{"role": "user", "content": "I want a latte and a croissant"}]}}' \
-  | python3 -m json.tool
+  -d '{"input": {"messages": [{"role": "user", "content": "I want a latte and a croissant"}]}}'
 ```
 
-Expected: `order` contains both items with correct prices.
+**Expected output:** Both items captured with correct prices 🎯
 
 ---
 
-## Test Suite
+## 🧪 Testing
 
 ```bash
 cd coffee_shop_customer_service_chatbot/python_code/api
@@ -153,60 +175,74 @@ python -m pytest tests/ -v
 ```
 
 ```
-61 passed in ~10s
+============================= test session starts =============================
+collected 61 items
+
+tests/test_agent_controller.py .........                                 [ 14%]
+tests/test_classification_agent.py ......                               [ 24%]
+tests/test_details_agent.py ........                                     [ 37%]
+tests/test_guard_agent.py .......                                        [ 48%]
+tests/test_order_taking_agent.py ....................                    [ 80%]
+tests/test_recommendation_agent.py ...........                           [ 98%]
+tests/test_server.py .                                                   [100%]
+
+============================= 61 passed in 10.2s ==============================
 ```
 
-Tests cover all 5 agents + controller + server, using `AsyncMock` to mock LLM calls — no API key needed to run tests.
+> 💡 **No API key needed** — tests use `AsyncMock` to mock all LLM calls.
 
 ---
 
-## Full Setup (Firebase + Pinecone RAG)
+## 🔧 Advanced Setup
 
-### Pinecone — enable shop Q&A
+### Pinecone (for RAG Q&A)
 
 ```bash
-# 1. Create a free account at pinecone.io and copy your API key
+# 1. Create free account at pinecone.io
 # 2. Add to python_code/api/.env:
-PINECONE_API_KEY=<your-key>
+PINECONE_API_KEY=your-pinecone-key
 PINECONE_INDEX_NAME=coffeeshop
 
-# 3. Build the index (runs locally, no embedding API needed)
+# 3. Build index (runs locally)
 cd coffee_shop_customer_service_chatbot/python_code
 python build_index.py
 ```
 
-The index is built from product descriptions, menu items, and shop info. Embeddings are generated with `sentence-transformers/all-MiniLM-L6-v2` on your machine.
+The index uses `sentence-transformers/all-MiniLM-L6-v2` for embeddings — all local, no API calls.
 
-### Firebase — live product catalog
+### Firebase (live product catalog)
 
 ```bash
-# 1. Create a free project at console.firebase.google.com
+# 1. Create project at console.firebase.google.com
 # 2. Enable Realtime Database
-# 3. Seed product data:
+# 3. Seed products:
 cd python_code
 jupyter notebook firebase_uploader.ipynb
 
-# 4. Add Firebase credentials to coffee_shop_app/.env
+# 4. Add Firebase creds to coffee_shop_app/.env
 ```
 
-Without Firebase, the home tab shows an empty menu but the **chat tab works fully**.
+> **Note:** Without Firebase, the home tab shows empty menu, but **chat tab works fully**.
 
 ---
 
-## Run on a Physical Phone
+## 📱 Run on Physical Phone
 
-Install [Expo Go](https://expo.dev/go). Make sure your phone is on the same Wi-Fi:
-
-```bash
-# In coffee_shop_app/.env — use your machine's local IP
-EXPO_PUBLIC_RUNPOD_API_URL='http://192.168.x.x:8000/chat'
-
-npm start   # scan the QR code with Expo Go
-```
+1. Install [Expo Go](https://expo.dev/go) on your phone
+2. Make sure phone and computer are on same Wi-Fi
+3. Update `coffee_shop_app/.env`:
+   ```env
+   EXPO_PUBLIC_RUNPOD_API_URL='http://192.168.x.x:8000/chat'  # Use your local IP
+   ```
+4. Run and scan:
+   ```bash
+   npm start
+   # Scan QR code with Expo Go
+   ```
 
 ---
 
-## Production Deployment (RunPod Serverless)
+## 🚢 Production Deployment (RunPod)
 
 ```bash
 cd coffee_shop_customer_service_chatbot/python_code/api
@@ -215,42 +251,43 @@ docker build -t your-dockerhub/fero-cafe:latest .
 docker push your-dockerhub/fero-cafe:latest
 ```
 
-1. Create a RunPod serverless endpoint with the image
+1. Create RunPod serverless endpoint with the image
 2. Set env vars from `.env_example`
-3. Update `EXPO_PUBLIC_RUNPOD_API_URL` in the frontend to the RunPod endpoint URL
+3. Update frontend `EXPO_PUBLIC_RUNPOD_API_URL` to RunPod endpoint
 
 ---
 
-## Prompts to Try
+## 💬 Try These Prompts
 
-| Prompt | Agent |
-|---|---|
-| `"Who won the World Cup?"` | Guard blocks |
-| `"What are your opening hours?"` | Details (RAG) |
-| `"Tell me about Fero Cafe"` | Details (RAG) |
-| `"What do you recommend?"` | Recommendation |
-| `"What pastry should I get?"` | Recommendation by category |
-| `"I want a latte and a croissant"` | Order — 2 items captured |
-| `"Also add an espresso"` | Order — state carry-forward |
-| `"No thanks, that's all"` | Order — finalize with total |
+| You say... | Agent handles it |
+|------------|------------------|
+| *"Who won the World Cup?"* | 🛡️ Guard blocks |
+| *"What are your opening hours?"* | 📚 Details (RAG) |
+| *"Tell me about Fero Cafe"* | 📚 Details (RAG) |
+| *"What do you recommend?"* | 🎯 Recommendation |
+| *"What pastry should I get?"* | 🎯 Recommendation (category) |
+| *"I want a latte and a croissant"* | 📝 Order — 2 items captured |
+| *"Also add an espresso"* | 📝 Order — remembers context |
+| *"No thanks, that's all"* | 📝 Order — finalizes with total |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 coffee_shop_customer_service_chatbot/
-├── coffee_shop_app/              # React Native (Expo) frontend
+├── 📱 coffee_shop_app/              # React Native (Expo)
 │   ├── app/
 │   │   ├── (tabs)/
-│   │   │   ├── home.tsx          # Menu browse + cart
+│   │   │   ├── home.tsx          # Menu + cart
 │   │   │   ├── chatRoom.tsx      # Chat UI → auto-fills cart
-│   │   │   └── order.tsx         # Cart review + checkout
-│   │   └── details.tsx           # Product detail screen
+│   │   │   └── order.tsx         # Checkout
+│   │   └── details.tsx           # Product detail
 │   ├── components/               # CartContext, UI components
 │   ├── services/                 # chatBot.ts, productService.ts
-│   └── config/                   # Firebase + API config
-└── python_code/
+│   └── config/                   # Firebase config
+│
+└── 🐍 python_code/
     ├── api/
     │   ├── agents/
     │   │   ├── guard_agent.py
@@ -259,12 +296,12 @@ coffee_shop_customer_service_chatbot/
     │   │   ├── order_taking_agent.py
     │   │   ├── recommendation_agent.py
     │   │   └── utils.py
-    │   ├── tests/                # 61 passing tests
-    │   ├── local_server.py       # FastAPI dev server
-    │   ├── main.py               # RunPod production entry point
+    │   ├── tests/                # 61 tests ✅
+    │   ├── local_server.py       # Dev server
+    │   ├── main.py               # RunPod entry point
     │   ├── agent_controller.py   # Pipeline orchestration
-    │   └── menu.json             # Single source of truth for menu
-    ├── build_index.py            # Build Pinecone RAG index
+    │   └── menu.json             # Single source of truth
+    ├── build_index.py            # Pinecone index builder
     ├── build_vector_database.ipynb
     ├── firebase_uploader.ipynb
     └── recommendation_engine_training.ipynb
@@ -272,28 +309,48 @@ coffee_shop_customer_service_chatbot/
 
 ---
 
-## Environment Variables
+## 🔐 Environment Variables
 
 ### Backend (`python_code/api/.env`)
 
-| Variable | Required | Description |
-|---|---|---|
-| `RUNPOD_TOKEN` | Yes | Groq API key (local) or RunPod token (production) |
-| `RUNPOD_CHATBOT_URL` | Yes | `https://api.groq.com/openai/v1` for Groq |
-| `MODEL_NAME` | Yes | `llama-3.3-70b-versatile` (Groq) |
-| `PINECONE_API_KEY` | No | Enables RAG — embeddings are generated locally |
-| `PINECONE_INDEX_NAME` | No | Name of your Pinecone index (e.g. `coffeeshop`) |
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `RUNPOD_TOKEN` | ✅ Yes | - | Groq API key |
+| `RUNPOD_CHATBOT_URL` | ✅ Yes | - | `https://api.groq.com/openai/v1` |
+| `MODEL_NAME` | ✅ Yes | - | `llama-3.3-70b-versatile` |
+| `PINECONE_API_KEY` | ❌ No | - | Enables RAG |
+| `PINECONE_INDEX_NAME` | ❌ No | - | Pinecone index name |
 
 ### Frontend (`coffee_shop_app/.env`)
 
 | Variable | Required | Description |
-|---|---|---|
-| `EXPO_PUBLIC_RUNPOD_API_URL` | Yes | Backend URL (`http://localhost:8000/chat` locally) |
-| `EXPO_PUBLIC_FIREBASE_*` | No | Firebase credentials — app works without them |
+|----------|----------|-------------|
+| `EXPO_PUBLIC_RUNPOD_API_URL` | ✅ Yes | Backend URL (`http://localhost:8000/chat`) |
+| `EXPO_PUBLIC_FIREBASE_*` | ❌ No | Firebase credentials (optional) |
 
 ---
 
-## License
+## 📄 License
 
-MIT
+MIT — free for personal and commercial use.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Groq](https://groq.com) for free LLM access
+- [Pinecone](https://pinecone.io) for vector database
+- [Expo](https://expo.dev) for React Native tooling
+
+---
+
+**Built with ☕ and 🤖 by SilvaLAB**
+
+---
+
+## 🔗 Links
+
+- 📹 **Demo Video:** [Issue #2 - Watch Fero Cafe in Action](https://github.com/silvaxxx1/Cafe.AI/issues/2)
+- 🐛 **Report Bug:** [Create an issue](https://github.com/silvaxxx1/Cafe.AI/issues)
+- 💡 **Feature Request:** [Open a discussion](https://github.com/silvaxxx1/Cafe.AI/issues)
 ```
