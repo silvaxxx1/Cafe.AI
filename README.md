@@ -6,7 +6,9 @@
 
 ## Demo
 
-<video src="demo.mp4" controls width="100%"></video>
+📹 **[Watch demo video (13MB MP4)](demo.mp4)**
+
+*Click to watch - opens directly in your browser*
 
 **What you'll see:**
 - Guard agent blocking off-topic questions
@@ -292,3 +294,4 @@ coffee_shop_customer_service_chatbot/
 ## License
 
 MIT
+```
