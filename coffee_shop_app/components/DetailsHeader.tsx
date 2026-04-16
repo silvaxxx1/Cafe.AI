@@ -1,5 +1,6 @@
 import { Text, View,Image } from 'react-native'
 import React from 'react'
+import productImages from '@/constants/productImages';
 import Octicons from '@expo/vector-icons/Octicons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -15,8 +16,8 @@ interface DetailsHeaderInterface {
 const DetailsHeader = ({image_url,name,type,rating}:DetailsHeaderInterface) => {
   return (
     <>
-        <Image 
-            source = {{ uri: image_url}}
+        <Image
+            source={productImages[image_url]}
             className='w-full  h-48 rounded-2xl mt-2'
             />
 

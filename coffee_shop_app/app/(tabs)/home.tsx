@@ -11,6 +11,7 @@ import Toast from 'react-native-root-toast';
 import { useCart } from '@/components/CartContext';
 import Banner from '@/components/Banner';
 import SearchArea from '@/components/SearchArea';
+import productImages from '@/constants/productImages';
 
 const Home = () => {
 
@@ -107,8 +108,8 @@ const Home = () => {
                     }
                   }
                 >
-                  <Image 
-                    source= {{ uri: item.image_url}}
+                  <Image
+                    source={productImages[item.image_url]}
                     className='w-full h-32 rounded-2xl'
                   />
                   <Text

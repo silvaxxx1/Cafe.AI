@@ -40,7 +40,13 @@ class AgentController():
         classification_agent_response = await self.classification_agent.get_response(messages)
         chosen_agent = classification_agent_response["memory"]["classification_decision"]
 
-        agent = self.agent_dict[chosen_agent]
+        agent = self.agent_dict.get(chosen_agent)
+        if agent is None:
+            return {
+                "role": "assistant",
+                "content": "I'm having trouble understanding your request. Could you rephrase that?",
+                "memory": {"agent": "classification_agent", "error": f"unknown_agent:{chosen_agent}"}
+            }
         response = await agent.get_response(messages)
 
         return response

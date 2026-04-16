@@ -6,7 +6,7 @@
   {"name": "Espresso shot",                     "price": 2.00, "category": "Coffee"},
   {"name": "Hazelnut Biscotti",                 "price": 2.75, "category": "Bakery"},
   {"name": "Chocolate Croissant",               "price": 3.75, "category": "Bakery"},
-  {"name": "Dark chocolate (Drinking Chocolate)","price": 5.00, "category": "Drinking Chocolate"},
+  {"name": "Dark chocolate",                     "price": 5.00, "category": "Drinking Chocolate"},
   {"name": "Cranberry Scone",                   "price": 3.50, "category": "Bakery"},
   {"name": "Croissant",                         "price": 3.25, "category": "Bakery"},
   {"name": "Almond Croissant",                  "price": 4.00, "category": "Bakery"},
@@ -17,5 +17,5 @@
   {"name": "Hazelnut syrup",                    "price": 1.50, "category": "Flavours"},
   {"name": "Carmel syrup",                      "price": 1.50, "category": "Flavours"},
   {"name": "Sugar Free Vanilla syrup",          "price": 1.50, "category": "Flavours"},
-  {"name": "Dark chocolate (Packaged Chocolate)","price": 3.00, "category": "Packaged Chocolate"}
+  {"name": "Dark chocolate bar",                 "price": 3.00, "category": "Packaged Chocolate"}
 ]

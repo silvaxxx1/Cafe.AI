@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
 [![React Native](https://img.shields.io/badge/React%20Native-Expo-blue.svg)](https://expo.dev)
 [![Groq](https://img.shields.io/badge/Groq-llama--3.3-orange.svg)](https://groq.com)
-[![Tests](https://img.shields.io/badge/tests-61%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-102%20passing-brightgreen.svg)]()
 
 ---
 
@@ -36,7 +36,8 @@
 | 🎯 **Personalized recommendations** | Apriori market basket analysis + popularity rankings |
 | 📱 **React Native app** | Browse menu, chat, review cart — one unified flow |
 | 🔄 **Provider-agnostic LLM** | Swap Groq, RunPod, OpenAI in one `.env` change |
-| ✅ **61 passing tests** | Full async test suite with mocked LLM calls |
+| ✅ **102 passing tests** | Full async test suite with mocked LLM calls |
+| 🖼️ **Local product images** | Bundled in app assets — no Firebase Storage needed |
 
 ---
 
@@ -47,7 +48,7 @@ React Native App (Expo)
         │
         │  POST /chat  { messages: [...] }
         ▼
-   FastAPI Server  (local_server.py)
+   FastAPI Server  (local_server.py)  ← fully async
         │
         ▼
    AgentController
@@ -71,7 +72,7 @@ React Native App (Expo)
 3. **Specialized Agents** → Handle specific tasks with RAG or business logic
 4. **Groq API** → Powers all LLM calls with `llama-3.3-70b-versatile`
 
-> 💡 **Design philosophy:** Every agent uses `AsyncOpenAI` with configurable `base_url` — no vendor lock-in. State lives in the message array, no database needed.
+> 💡 **Design philosophy:** Every agent uses `AsyncOpenAI` with configurable `base_url` — no vendor lock-in. Invalid agent routing returns a graceful error instead of crashing.
 
 ---
 
@@ -81,13 +82,14 @@ React Native App (Expo)
 |-------|------------|-----|
 | **LLM** | Groq API (`llama-3.3-70b`) | Free tier, blazing fast |
 | **Embeddings** | sentence-transformers (all-MiniLM-L6-v2) | Runs locally, no API cost |
-| **Vector DB** | Pinecone | Free serverless index |
+| **Vector DB** | Pinecone | Free serverless index (optional) |
 | **Backend** | Python 3.12 + FastAPI | Async, type-safe, fast |
 | **Frontend** | React Native + Expo Router | Cross-platform, hot reload |
 | **Styling** | NativeWind (Tailwind) | Utility-first, rapid UI |
 | **Recommendations** | scikit-learn (Apriori) | Market basket analysis |
-| **Testing** | pytest + AsyncMock | 61 tests, no API key needed |
-| **Product catalog** | Firebase (optional) | Real-time sync |
+| **Testing** | pytest + AsyncMock | 102 tests, no API key needed |
+| **Product catalog** | Firebase Realtime DB | Live product data |
+| **Product images** | Bundled local assets | No Firebase Storage required |
 
 ---
 
@@ -123,6 +125,9 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 cd python_code/api
 uv pip install -r requirements.txt
 
+# Fix httpx version (required — newer versions break openai SDK)
+uv pip install "httpx==0.27.2"
+
 # Configure environment
 cp .env_example .env
 ```
@@ -147,7 +152,7 @@ python local_server.py
 # Open new terminal, go to frontend
 cd coffee_shop_customer_service_chatbot/coffee_shop_app
 
-# Copy config
+# Copy config and fill in Firebase + backend URL
 cp .env_example.txt .env
 
 # Install and run
@@ -176,17 +181,16 @@ python -m pytest tests/ -v
 
 ```
 ============================= test session starts =============================
-collected 61 items
+collected 102 items
 
-tests/test_agent_controller.py .........                                 [ 14%]
-tests/test_classification_agent.py ......                               [ 24%]
-tests/test_details_agent.py ........                                     [ 37%]
-tests/test_guard_agent.py .......                                        [ 48%]
-tests/test_order_taking_agent.py ....................                    [ 80%]
-tests/test_recommendation_agent.py ...........                           [ 98%]
-tests/test_server.py .                                                   [100%]
+tests/test_agent_controller.py .........                                 [ 8%]
+tests/test_classification_agent.py ............                          [19%]
+tests/test_guard_agent.py ..............................                  [48%]
+tests/test_order_taking_agent.py ......................                   [69%]
+tests/test_recommendation_agent.py ...................                    [88%]
+tests/test_server.py ..........                                          [97%]
 
-============================= 61 passed in 10.2s ==============================
+============================= 102 passed ==============================
 ```
 
 > 💡 **No API key needed** — tests use `AsyncMock` to mock all LLM calls.
@@ -203,26 +207,33 @@ tests/test_server.py .                                                   [100%]
 PINECONE_API_KEY=your-pinecone-key
 PINECONE_INDEX_NAME=coffeeshop
 
-# 3. Build index (runs locally)
+# 3. Build index (runs locally, no API cost)
 cd coffee_shop_customer_service_chatbot/python_code
-python build_index.py
+jupyter notebook build_vector_database.ipynb
 ```
 
-The index uses `sentence-transformers/all-MiniLM-L6-v2` for embeddings — all local, no API calls.
+The index uses `sentence-transformers/all-MiniLM-L6-v2` — all local, no API calls.  
+Without Pinecone, `DetailsAgent` is gracefully disabled and the app still works.
 
 ### Firebase (live product catalog)
 
+Firebase is already configured in this project (`fero-ai`). To set up your own:
+
 ```bash
 # 1. Create project at console.firebase.google.com
-# 2. Enable Realtime Database
-# 3. Seed products:
+# 2. Enable Realtime Database (Spark/free plan is enough — Storage NOT required)
+# 3. Get service account JSON from Project Settings → Service Accounts
+# 4. Fill python_code/.env with service account fields
+# 5. Seed products (images are local, no upload needed):
 cd python_code
 jupyter notebook firebase_uploader.ipynb
 
-# 4. Add Firebase creds to coffee_shop_app/.env
+# 6. Add Firebase web config to coffee_shop_app/.env
 ```
 
-> **Note:** Without Firebase, the home tab shows empty menu, but **chat tab works fully**.
+Product images are **bundled locally** in `coffee_shop_app/assets/images/products/` and mapped by filename in `constants/productImages.ts`. Firebase stores only the filename (e.g. `cappuccino.jpg`), not a remote URL.
+
+> **Note:** Without Firebase, the home tab shows an empty menu, but the chat tab works fully — the agent validates orders against `menu.json` which is always loaded server-side.
 
 ---
 
@@ -283,7 +294,10 @@ coffee_shop_customer_service_chatbot/
 │   │   │   ├── chatRoom.tsx      # Chat UI → auto-fills cart
 │   │   │   └── order.tsx         # Checkout
 │   │   └── details.tsx           # Product detail
+│   ├── assets/images/products/   # Bundled product images (18 items)
 │   ├── components/               # CartContext, UI components
+│   ├── constants/
+│   │   └── productImages.ts      # filename → require() map
 │   ├── services/                 # chatBot.ts, productService.ts
 │   └── config/                   # Firebase config
 │
@@ -295,15 +309,19 @@ coffee_shop_customer_service_chatbot/
     │   │   ├── details_agent.py
     │   │   ├── order_taking_agent.py
     │   │   ├── recommendation_agent.py
+    │   │   ├── agent_protocol.py     # async Protocol
     │   │   └── utils.py
-    │   ├── tests/                # 61 tests ✅
-    │   ├── local_server.py       # Dev server
+    │   ├── tests/                # 102 tests ✅
+    │   ├── recommendation_objects/
+    │   ├── local_server.py       # Dev server (async FastAPI)
     │   ├── main.py               # RunPod entry point
     │   ├── agent_controller.py   # Pipeline orchestration
-    │   └── menu.json             # Single source of truth
-    ├── build_index.py            # Pinecone index builder
+    │   └── menu.json             # Single source of truth for product names
+    ├── products/
+    │   ├── products.jsonl        # Full product data (seeded to Firebase)
+    │   └── images/               # Source images
+    ├── firebase_uploader.ipynb   # Seeds Firebase (no Storage needed)
     ├── build_vector_database.ipynb
-    ├── firebase_uploader.ipynb
     └── recommendation_engine_training.ipynb
 ```
 
@@ -313,20 +331,38 @@ coffee_shop_customer_service_chatbot/
 
 ### Backend (`python_code/api/.env`)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `RUNPOD_TOKEN` | ✅ Yes | - | Groq API key |
-| `RUNPOD_CHATBOT_URL` | ✅ Yes | - | `https://api.groq.com/openai/v1` |
-| `MODEL_NAME` | ✅ Yes | - | `llama-3.3-70b-versatile` |
-| `PINECONE_API_KEY` | ❌ No | - | Enables RAG |
-| `PINECONE_INDEX_NAME` | ❌ No | - | Pinecone index name |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `RUNPOD_TOKEN` | ✅ Yes | Groq API key |
+| `RUNPOD_CHATBOT_URL` | ✅ Yes | `https://api.groq.com/openai/v1` |
+| `MODEL_NAME` | ✅ Yes | `llama-3.3-70b-versatile` |
+| `PINECONE_API_KEY` | ❌ No | Enables RAG in DetailsAgent |
+| `PINECONE_INDEX_NAME` | ❌ No | Pinecone index name |
+
+### Firebase Seeding (`python_code/.env`)
+
+| Variable | Description |
+|----------|-------------|
+| `FIREBASE_*` | Service account fields from Firebase console |
+| `FIREBASE_DATABASE_URL` | Realtime Database URL |
 
 ### Frontend (`coffee_shop_app/.env`)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `EXPO_PUBLIC_RUNPOD_API_URL` | ✅ Yes | Backend URL (`http://localhost:8000/chat`) |
-| `EXPO_PUBLIC_FIREBASE_*` | ❌ No | Firebase credentials (optional) |
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | ✅ Yes | Firebase web API key |
+| `EXPO_PUBLIC_FIREBASE_DATABASE_URL` | ✅ Yes | Realtime Database URL |
+| `EXPO_PUBLIC_FIREBASE_*` | ✅ Yes | Remaining Firebase web config fields |
+
+---
+
+## ⚠️ Known Issues / Notes
+
+- **httpx version:** Pin `httpx==0.27.2` — newer versions break the `openai` async client
+- **Menu names:** `menu.json` is the authority. If you rename a product, update `products.jsonl` and re-seed Firebase
+- **No streaming yet:** Responses are full round-trip — streaming is the next planned feature
+- **Session memory:** Conversation state lives in the frontend's React state only — lost on page refresh
 
 ---
 
@@ -341,8 +377,8 @@ MIT — free for personal and commercial use.
 - [Groq](https://groq.com) for free LLM access
 - [Pinecone](https://pinecone.io) for vector database
 - [Expo](https://expo.dev) for React Native tooling
+- [Firebase](https://firebase.google.com) for real-time product catalog
 
 ---
 
 **Built with ☕ and 🤖 by SilvaLAB**
-```
