@@ -6,18 +6,15 @@
 
 ## Demo
 
-<!-- Replace the link below with your actual demo video URL after uploading to YouTube/Loom -->
-[![Fero Cafe Demo](/home/silva/SILVA.AI/Projects/Cafe.AI/coffee_shop_customer_service_chatbot/demo.mp4)
+<video src="demo.mp4" controls width="100%"></video>
 
-> **Demo video:** Full-stack AI coffee shop chatbot showing guard agent filtering off-topic queries, RAG-powered retrieval of shop hours and menu details, multi-item order capture from natural conversation, automatic upsell recommendations, order finalization with calculated totals, and cart auto-population from chat interactions. Professional demonstration of conversational AI in action for customer service.
-
-> **What you'll see in the demo:**
-> - Guard agent blocking off-topic questions
-> - RAG-powered shop info (hours, location, menu details)
-> - Multi-item order: "I want a latte, croissant, and espresso" → all 3 captured
-> - Automatic upsell recommendation after first order
-> - Order finalization with correct total
-> - Cart auto-populated from chat
+**What you'll see:**
+- Guard agent blocking off-topic questions
+- RAG-powered shop info (hours, location, menu details)
+- Multi-item order: *"I want a latte, croissant, and espresso"* → all 3 captured
+- Automatic upsell recommendation after first order
+- Order finalization with correct total
+- Cart auto-populated from chat
 
 ---
 
