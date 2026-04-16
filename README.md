@@ -7,7 +7,9 @@
 ## Demo
 
 <!-- Replace the link below with your actual demo video URL after uploading to YouTube/Loom -->
-[![Fero Cafe Demo](https://img.shields.io/badge/Watch%20Demo-YouTube-red?style=for-the-badge&logo=youtube)](https://youtube.com)
+[![Fero Cafe Demo](https://github.com/silvaxxx1/Cafe.AI/issues/1)](https://github.com/silvaxxx1/Cafe.AI/issues/1)
+
+> **Demo video:** Full-stack AI coffee shop chatbot showing guard agent filtering off-topic queries, RAG-powered retrieval of shop hours and menu details, multi-item order capture from natural conversation, automatic upsell recommendations, order finalization with calculated totals, and cart auto-population from chat interactions. Professional demonstration of conversational AI in action for customer service.
 
 > **What you'll see in the demo:**
 > - Guard agent blocking off-topic questions
