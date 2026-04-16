@@ -10,21 +10,19 @@
 
 ---
 
-## Demo
+## 📹 Demo
 
-📹 **[Watch demo video (13MB MP4)](demo.mp4)**
+![Fero Cafe Demo Animation](demo.gif)
 
-*Click to watch - opens directly in your browser*
+*Complete walkthrough of the AI chatbot - ordering, recommendations, and cart integration*
 
-**What you'll see:**
-- Guard agent blocking off-topic questions
-- RAG-powered shop info (hours, location, menu details)
-- Multi-item order: *"I want a latte, croissant, and espresso"* → all 3 captured
-- Automatic upsell recommendation after first order
-- Order finalization with correct total
-- Cart auto-populated from chat
-
-[![Demo Video](https://img.shields.io/badge/📹-Watch%20Demo%20Video-ff69b4)](https://github.com/silvaxxx1/Cafe.AI/issues/2)
+**What you'll see in action:**
+- 🛡️ Guard agent blocking off-topic questions
+- 📚 RAG-powered shop info (hours, location, menu)
+- 🛒 Multi-item order: *"I want a latte, croissant, and espresso"* → all 3 captured
+- 💡 Automatic upsell recommendation after first order
+- ✅ Order finalization with correct total
+- 🔄 Cart auto-populated from chat
 
 ---
 
@@ -326,13 +324,25 @@ coffee_shop_customer_service_chatbot/
 ### Frontend (`coffee_shop_app/.env`)
 
 | Variable | Required | Description |
-|---|---|---|
-| `EXPO_PUBLIC_RUNPOD_API_URL` | Yes | Backend URL (`http://localhost:8000/chat` locally) |
-| `EXPO_PUBLIC_FIREBASE_*` | No | Firebase credentials — app works without them |
+|----------|----------|-------------|
+| `EXPO_PUBLIC_RUNPOD_API_URL` | ✅ Yes | Backend URL (`http://localhost:8000/chat`) |
+| `EXPO_PUBLIC_FIREBASE_*` | ❌ No | Firebase credentials (optional) |
 
 ---
 
-## License
+## 📄 License
 
-MIT
+MIT — free for personal and commercial use.
+
+---
+
+## 🙏 Acknowledgments
+
+- [Groq](https://groq.com) for free LLM access
+- [Pinecone](https://pinecone.io) for vector database
+- [Expo](https://expo.dev) for React Native tooling
+
+---
+
+**Built with ☕ and 🤖 by SilvaLAB**
 ```
