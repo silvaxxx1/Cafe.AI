@@ -115,7 +115,7 @@ Groq API key → https://console.groq.com
 ```bash
 # Clone and enter repo
 git clone https://github.com/silvaxxx1/Cafe.AI.git
-cd Cafe.AI/coffee_shop_customer_service_chatbot
+cd Cafe.AI
 
 # Create virtual environment
 uv venv .venv --python 3.12
@@ -150,7 +150,7 @@ python local_server.py
 
 ```bash
 # Open new terminal, go to frontend
-cd coffee_shop_customer_service_chatbot/coffee_shop_app
+cd coffee_shop_app
 
 # Copy config and fill in Firebase + backend URL
 cp .env_example.txt .env
@@ -175,7 +175,7 @@ curl -X POST http://localhost:8000/chat \
 ## 🧪 Testing
 
 ```bash
-cd coffee_shop_customer_service_chatbot/python_code/api
+cd python_code/api
 python -m pytest tests/ -v
 ```
 
@@ -256,7 +256,7 @@ Product images are **bundled locally** in `coffee_shop_app/assets/images/product
 ## 🚢 Production Deployment (RunPod)
 
 ```bash
-cd coffee_shop_customer_service_chatbot/python_code/api
+cd python_code/api
 
 docker build -t your-dockerhub/fero-cafe:latest .
 docker push your-dockerhub/fero-cafe:latest
@@ -286,19 +286,26 @@ docker push your-dockerhub/fero-cafe:latest
 ## 📁 Project Structure
 
 ```
-coffee_shop_customer_service_chatbot/
+Cafe.AI/
 ├── 📱 coffee_shop_app/              # React Native (Expo)
 │   ├── app/
-│   │   ├── (tabs)/
-│   │   │   ├── home.tsx          # Menu + cart
-│   │   │   ├── chatRoom.tsx      # Chat UI → auto-fills cart
-│   │   │   └── order.tsx         # Checkout
-│   │   └── details.tsx           # Product detail
-│   ├── assets/images/products/   # Bundled product images (18 items)
-│   ├── components/               # CartContext, UI components
+│   │   ├── _layout.tsx           # Root layout: providers + web frame
+│   │   ├── index.tsx             # Splash / landing screen
+│   │   ├── details.tsx           # Product detail
+│   │   ├── thankyou.tsx          # Order confirmation
+│   │   └── (tabs)/
+│   │       ├── _layout.tsx       # Tab bar with cart badge
+│   │       ├── home.tsx          # Menu browse + category filter
+│   │       ├── chatRoom.tsx      # AI chat → auto-fills cart
+│   │       └── order.tsx         # Cart review + checkout
+│   ├── components/               # CartContext, MessageList, UI components
 │   ├── constants/
+│   │   ├── theme.ts              # Light/dark token system + useTheme()
+│   │   ├── responsive.ts         # useGridColumns(), webPointer utils
 │   │   └── productImages.ts      # filename → require() map
-│   ├── services/                 # chatBot.ts, productService.ts
+│   ├── services/                 # chatBot.ts, productService.ts (cached)
+│   ├── assets/images/products/   # Bundled product images (18 items)
+│   ├── polyfills.ts              # setImmediate shim for web
 │   └── config/                   # Firebase config
 │
 └── 🐍 python_code/
