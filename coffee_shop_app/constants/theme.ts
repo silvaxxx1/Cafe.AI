@@ -56,7 +56,17 @@ const dark = {
   ratingGold: '#E8A835',      // brighter amber for dark mode
 };
 
-export type Theme = typeof light;
+export type Theme = {
+  bg: string; surface: string; surfaceAlt: string;
+  text: string; textMuted: string; textFaint: string;
+  accent: string; onAccent: string; accentSubtle: string;
+  border: string; tabBar: string; tabBarBorder: string;
+  statusBar: 'dark-content' | 'light-content';
+  isDark: boolean;
+  inputBg: string; chatBg: string;
+  userBubble: string; userBubbleBorder: string; assistantBubble: string;
+  success: string; successSubtle: string; destructive: string; ratingGold: string;
+};
 
 export function useTheme(): Theme {
   const scheme = useColorScheme();
