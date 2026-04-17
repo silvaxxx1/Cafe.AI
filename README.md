@@ -12,7 +12,7 @@
 
 ## 📹 Demo
 
-![Fero Cafe Demo Animation](demo.gif)
+![Fero Cafe Demo Animation](fero_demo.gif)
 
 *Complete walkthrough of the AI chatbot - ordering, recommendations, and cart integration*
 
