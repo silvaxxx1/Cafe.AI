@@ -23,3 +23,17 @@ Thumbs.db
 # Personal notes — not for repo
 SENIOR_UPGRADE.md
 docs/
+.impeccable.md
+
+# AI assistant configs — private
+.claude/
+.agents/
+.codex/
+.cursor/
+.gemini/
+.kiro/
+.opencode/
+.pi/
+.rovodev/
+.trae/
+.trae-cn/
