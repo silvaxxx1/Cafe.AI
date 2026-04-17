@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables — never commit these
+.env
+**/.env
+
+# Frontend
+coffee_shop_customer_service_chatbot/coffee_shop_app/node_modules/
+coffee_shop_customer_service_chatbot/coffee_shop_app/.expo/
+coffee_shop_customer_service_chatbot/coffee_shop_app/dist/
+coffee_shop_customer_service_chatbot/coffee_shop_app/web-build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Personal notes — not for repo
+SENIOR_UPGRADE.md
+docs/

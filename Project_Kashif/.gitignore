@@ -1,0 +1,61 @@
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*.pyo
+.python-version
+.venv/
+*.egg-info/
+dist/
+build/
+
+# =============================================================================
+# Secrets — NEVER commit
+# =============================================================================
+.env
+.env.*
+!.env.example
+secrets.yaml
+*_key.txt
+
+# =============================================================================
+# Runtime outputs — generated per run, not source code
+# =============================================================================
+kashif_core/outputs/*
+!kashif_core/outputs/.gitkeep
+
+# Data files — use data/README or DVC instead
+kashif_core/data/*.csv
+kashif_core/data/*.parquet
+
+# Models
+*.pkl
+*.pickle
+*.joblib
+*.h5
+
+# =============================================================================
+# Test / tooling cache
+# =============================================================================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =============================================================================
+# Editor / OS noise
+# =============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Notebooks (exploratory)
+*.ipynb
+.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
