@@ -1,30 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme } from '@/constants/theme';
 
 const DeliveryToggle: React.FC = () => {
-  const [isDelivery, setIsDelivery] = useState(true); // State to manage the selected option
+  const theme = useTheme();
+  const [isDelivery, setIsDelivery] = useState(true);
 
   return (
-    <View className="flex-row justify-between bg-[#EDEDED] mx-7 p-1 rounded-xl mt-7">
-      <TouchableOpacity
-        className={`py-1 px-[15%] font-[Sora-SemiBold] rounded-xl ${isDelivery ? 'bg-[#C67C4E]' : ''}`} // Dynamic classes
-        onPress={() => setIsDelivery(true)}
-      >
-        <Text className={`text-lg ${isDelivery ? 'text-white' : 'text-black'}`}>
-          Deliver
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        className={`py-1 px-[15%] font-[Sora-SemiBold] rounded-xl ${!isDelivery ? 'bg-[#C67C4E]' : ''}`} // Dynamic classes
-        onPress={() => setIsDelivery(false)}
-      >
-        <Text className={`text-lg ${!isDelivery ? 'text-white' : 'text-black'}`}>
-          Pick Up
-        </Text>
-      </TouchableOpacity>
+    <View style={[styles.container, { backgroundColor: theme.surfaceAlt }]}>
+      {['Deliver', 'Pick Up'].map((label) => {
+        const active = isDelivery ? label === 'Deliver' : label === 'Pick Up';
+        return (
+          <TouchableOpacity
+            key={label}
+            onPress={() => setIsDelivery(label === 'Deliver')}
+            style={[
+              styles.option,
+              active && { backgroundColor: theme.accent },
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.optionText, { color: active ? theme.onAccent : theme.textMuted }]}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    padding: 4,
+    borderRadius: 14,
+    marginTop: 20,
+  },
+  option: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 11,
+    alignItems: 'center',
+  },
+  optionText: {
+    fontFamily: 'Sora-SemiBold',
+    fontSize: 14,
+  },
+});
 
 export default DeliveryToggle;

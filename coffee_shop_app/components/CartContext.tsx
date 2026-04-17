@@ -1,9 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
 
-// Define the type for the cart items
-type CartItems = {
-  [key: string]: number;  // key is the product ID, value is the quantity
-};
+type CartItems = { [key: string]: number };
 
 interface CartContextType {
   cartItems: CartItems;
@@ -12,45 +9,43 @@ interface CartContextType {
   emptyCart: () => void;
 }
 
-// Create a Cart Context
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Create a provider component
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItems>({});
 
-  const SetQuantityCart = (itemKey: string, delta: number) => {
-    setCartItems((prevItems) => ({
-      ...prevItems,
-      [itemKey]:  Math.max((prevItems[itemKey] || 0) + delta, 0),
+  const addToCart = useCallback((itemKey: string, quantity: number) => {
+    setCartItems((prev) => ({
+      ...prev,
+      [itemKey]: (prev[itemKey] || 0) + quantity,
     }));
-  };
-  
+  }, []);
 
-  const addToCart = (itemKey: string, quantity: number) => {
-    setCartItems((prevItems) => ({
-      ...prevItems,
-      [itemKey]: (prevItems[itemKey] || 0) + quantity,
+  const SetQuantityCart = useCallback((itemKey: string, delta: number) => {
+    setCartItems((prev) => ({
+      ...prev,
+      [itemKey]: Math.max((prev[itemKey] || 0) + delta, 0),
     }));
-  };
+  }, []);
 
-  
-  const emptyCart = () => {
+  const emptyCart = useCallback(() => {
     setCartItems({});
-};
+  }, []);
+
+  const value = useMemo(
+    () => ({ cartItems, addToCart, SetQuantityCart, emptyCart }),
+    [cartItems, addToCart, SetQuantityCart, emptyCart]
+  );
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, emptyCart ,SetQuantityCart }}>
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );
 };
 
-// Custom hook for using cart context
 export const useCart = (): CartContextType => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (!context) throw new Error('useCart must be used within a CartProvider');
   return context;
 };

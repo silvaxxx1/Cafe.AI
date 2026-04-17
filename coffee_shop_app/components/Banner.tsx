@@ -1,45 +1,79 @@
-import {Text, View,Image } from 'react-native'
-import React from 'react'
+import { Text, View, Image, StyleSheet } from 'react-native';
+import React from 'react';
+import { useTheme } from '@/constants/theme';
 
 const Banner = () => {
+  const theme = useTheme();
+
   return (
-    <View className="rounded-lg  items-center">
-        <View
-        className='absolute w-full h-[90px] -top-1 items-center bg-[#222222] pb-10'
+    <View style={[styles.wrapper, { backgroundColor: theme.surface }]}>
+      <View style={styles.imageContainer}>
+        <Image
+          source={require('../assets/images/banner.png')}
+          style={styles.image}
+          resizeMode="cover"
         />
-            <Image   
-            source={require('../assets/images/banner.png')}
-            className="w-[90%] h-36 rounded-3xl"
-            />
-            <View
-            className='w-[90%] pl-7 absolute mt-2'
-            > 
-
-            {/* Promo Badge */}
-            <Text 
-                className=" bg-[#ED5151] rounded-lg text-white mb-1 text-m p-1.5 font-[Sora-SemiBold] self-start"
-                >Promo
-            </Text>
-            {/* Promo Title */}
-
-            <View
-                className='bg-[#222222] w-[75%] h-7 top-6'
-            >
-            </View>
-            <View
-            className='bg-[#222222] w-[60%] h-7 top-9'
-            >
-            </View>
-
-            <Text
-            className='text-white text-4xl font-[Sora-SemiBold] mt-3 w-[75%] -top-16'
-            style={{ lineHeight: 45 }}
-            >
-            Buy one get one FREE
-            </Text>
+        {/* Overlay with promo text */}
+        <View style={styles.overlay}>
+          <View style={[styles.badge, { backgroundColor: '#ED5151' }]}>
+            <Text style={styles.badgeText} accessibilityLabel="Promotion">PROMO</Text>
+          </View>
+          <Text style={[styles.promoLine, { color: theme.onAccent }]}>Buy one</Text>
+          <Text style={[styles.promoLineAccent, { color: theme.accent }]}>get one FREE</Text>
         </View>
+      </View>
     </View>
-  )
-}
+  );
+};
 
-export default Banner
+const styles = StyleSheet.create({
+  wrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 4,
+  },
+  imageContainer: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: 140,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    paddingLeft: 24,
+    backgroundColor: 'rgba(26, 18, 16, 0.45)',
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 10,
+  },
+  badgeText: {
+    fontFamily: 'Sora-SemiBold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: '#fff',
+  },
+  promoLine: {
+    fontFamily: 'Sora-ExtraBold',
+    fontSize: 26,
+    lineHeight: 30,
+  },
+  promoLineAccent: {
+    fontFamily: 'Sora-ExtraBold',
+    fontSize: 26,
+    lineHeight: 32,
+  },
+});
+
+export default React.memo(Banner);

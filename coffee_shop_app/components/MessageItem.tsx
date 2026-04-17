@@ -1,45 +1,107 @@
-import { Text, View } from 'react-native'
-import React from 'react'
-import { heightPercentageToDP } from 'react-native-responsive-screen';
+import { Text, View, StyleSheet } from 'react-native';
+import React from 'react';
 import { MessageInterface } from '@/types/types';
+import { useTheme } from '@/constants/theme';
+import { webSelectText } from '@/constants/responsive';
 
 interface Message {
-    message: MessageInterface;
+  message: MessageInterface;
 }
 
-const MessageItem = ({message}:Message) => {
-  if (message?.role == 'user') {
-    return (
-        <View
-            className='flex-row justify-end  mb-3 mr-3'
-        >
-            <View className='w-80%'>
-                <View className='self-end p-3 rounded-2xl bg-white border border-neutral-200'>
-                    <Text 
-                        style = {{fontSize: heightPercentageToDP(1.9)}}>
-                        {message?.content}
-                    </Text>
-                </View>
-            </View>
+const MessageItem = ({ message }: Message) => {
+  const theme = useTheme();
 
-        </View>
-    )
-  } else {
+  if (message?.role === 'user') {
     return (
+      <View style={styles.userRow}>
         <View
-            className='w-[80%] ml-3 mb-3'
+          style={[
+            styles.userBubble,
+            { backgroundColor: theme.userBubble, borderColor: theme.userBubbleBorder },
+          ]}
         >
-            <View className='flex self-start p-3 px-4 rounded-2xl bg-indigo-100 border border-indigo-200'>
-                <Text
-                    style = {{fontSize: heightPercentageToDP(1.9)}}
-                >
-                    {message?.content}
-                </Text>
-            </View>
-
+          <Text style={[styles.userText, { color: theme.text }, webSelectText]}>{message?.content}</Text>
         </View>
-    )
+      </View>
+    );
   }
-}
 
-export default MessageItem
+  return (
+    <View style={styles.assistantRow}>
+      {/* Barista avatar mark */}
+      <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
+        <Text style={[styles.avatarText, { color: theme.onAccent }]}>F</Text>
+      </View>
+
+      <View style={[styles.assistantBubble, { backgroundColor: theme.assistantBubble }]}>
+        <Text style={[styles.assistantLabel, { color: theme.accent }]}>Fero</Text>
+        <Text style={[styles.assistantText, { color: theme.text }, webSelectText]}>{message?.content}</Text>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  userRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 12,
+    marginRight: 16,
+    marginLeft: 64,
+  },
+  userBubble: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderTopRightRadius: 4,
+    borderWidth: 1,
+    maxWidth: '100%',
+  },
+  userText: {
+    fontFamily: 'Sora-Regular',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  assistantRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    marginLeft: 16,
+    marginRight: 48,
+    gap: 10,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    flexShrink: 0,
+  },
+  avatarText: {
+    fontFamily: 'Sora-Bold',
+    fontSize: 14,
+  },
+  assistantBubble: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderTopLeftRadius: 4,
+  },
+  assistantLabel: {
+    fontFamily: 'Sora-SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  assistantText: {
+    fontFamily: 'Sora-Regular',
+    fontSize: 15,
+    lineHeight: 23,
+  },
+});
+
+export default MessageItem;

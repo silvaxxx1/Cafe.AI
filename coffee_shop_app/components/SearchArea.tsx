@@ -1,38 +1,67 @@
-import {Text, View } from 'react-native'
-import React from 'react'
-import AntDesign from '@expo/vector-icons/AntDesign';
-import Entypo from '@expo/vector-icons/Entypo';
-import { TouchableOpacity } from "react-native-gesture-handler";
+import { Text, View, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTheme } from '@/constants/theme';
+
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning ☕';
+  if (hour < 17) return 'Good afternoon ☕';
+  return 'Good evening ☕';
+};
 
 const SearchArea = () => {
+  const theme = useTheme();
+  const greeting = useMemo(getGreeting, []);
+
   return (
-    <View
-        className='w-full items-center bg-[#222222] pb-6'>
-        <View className='flex w-[90%] pt-8'>
-        <Text className='text-[#A2A2A2] text-sm font-[Sora-Regular]'>
-            Location
-        </Text>
-        <Text className='text-white text font-[Sora-Regular]'>
-            Bilzen, Tanjungbalai
-        </Text>
+    <View style={[styles.container, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+      <View style={styles.inner}>
 
-        
-        <View className='w-full mt-5 flex-row justify-between'>
-            <View 
-            className="flex  w-[80%] h-14 px-4 bg-[#2A2A2A] rounded-2xl focus:border-secondary justify-center"
-            >
-            <AntDesign name="search1" size={24} color="white" />
-            </View>
+        {/* Location row */}
+        <View style={styles.locationRow}>
+          <Ionicons name="location-outline" size={13} color={theme.accent} />
+          <Text style={[styles.locationLabel, { color: theme.textFaint }]}>  Bilzen, Tanjungbalai</Text>
+        </View>
 
-            <TouchableOpacity 
-            className="flex-1 w-14 h-14 bg-app_orange_color rounded-2xl items-center justify-center " 
-            >
-            <Entypo name="sound-mix" size={24} color="white" />
-            </TouchableOpacity> 
-        </View>
-        </View>
+        {/* Page title */}
+        <Text style={[styles.title, { color: theme.text }]}>{greeting}</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>What are you having today?</Text>
+      </View>
     </View>
-  )
-}
+  );
+};
 
-export default SearchArea
+const styles = StyleSheet.create({
+  container: {
+    borderBottomWidth: 1,
+    paddingBottom: 20,
+  },
+  inner: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  locationLabel: {
+    fontFamily: 'Sora-Regular',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  title: {
+    fontFamily: 'Sora-ExtraBold',
+    fontSize: 28,
+    lineHeight: 34,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontFamily: 'Sora-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+});
+
+export default React.memo(SearchArea);
