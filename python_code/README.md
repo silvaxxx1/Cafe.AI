@@ -10,7 +10,7 @@ This folder contains two things: the multi-agent FastAPI backend that powers the
 python_code/
 ├── api/                                    # Multi-agent FastAPI backend
 │   ├── agents/                             # Guard, Classification, Details, Order, Recommendation
-│   ├── tests/                              # 102 passing tests (no API key needed)
+│   ├── tests/                              # 90 passing tests — unit + eval runners (no API key needed for unit tests)
 │   ├── recommendation_objects/             # Pre-trained Apriori model + popularity data
 │   ├── local_server.py                     # Dev server (FastAPI, mirrors RunPod format)
 │   ├── main.py                             # RunPod serverless entry point

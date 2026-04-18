@@ -1,0 +1,23 @@
+[
+  {"input": "What drinks do you have on the menu?", "expected": "details_agent"},
+  {"input": "Tell me about your espresso", "expected": "details_agent"},
+  {"input": "Where are you located?", "expected": "details_agent"},
+  {"input": "What are your opening hours?", "expected": "details_agent"},
+  {"input": "Do you have any allergen info?", "expected": "details_agent"},
+  {"input": "How many calories are in the latte?", "expected": "details_agent"},
+  {"input": "What sizes do you offer?", "expected": "details_agent"},
+  {"input": "I want to order a latte", "expected": "order_taking_agent"},
+  {"input": "Can I get a cappuccino and a croissant?", "expected": "order_taking_agent"},
+  {"input": "I'd like to place an order", "expected": "order_taking_agent"},
+  {"input": "Add an iced coffee to my order", "expected": "order_taking_agent"},
+  {"input": "yes, confirm my order", "expected": "order_taking_agent"},
+  {"input": "Can I change my order?", "expected": "order_taking_agent"},
+  {"input": "I'll take two espressos please", "expected": "order_taking_agent"},
+  {"input": "What do you recommend?", "expected": "recommendation_agent"},
+  {"input": "What's popular here?", "expected": "recommendation_agent"},
+  {"input": "Suggest something for a cold morning", "expected": "recommendation_agent"},
+  {"input": "I usually get a latte, what else might I like?", "expected": "recommendation_agent"},
+  {"input": "Surprise me with something good", "expected": "recommendation_agent"},
+  {"input": "What coffee do you recommend?", "expected": "recommendation_agent"},
+  {"input": "I'm not sure what to get, any suggestions?", "expected": "recommendation_agent"}
+]

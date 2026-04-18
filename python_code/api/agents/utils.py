@@ -1,4 +1,20 @@
+import time
+import structlog
+from contextvars import ContextVar
 from openai import AsyncOpenAI
+
+log = structlog.get_logger()
+
+# Accumulates token usage across all LLM calls within a single request.
+_token_counter: ContextVar[dict | None] = ContextVar("token_counter", default=None)
+
+
+def reset_token_counter() -> None:
+    _token_counter.set({"input": 0, "output": 0})
+
+
+def get_token_counts() -> dict:
+    return _token_counter.get() or {"input": 0, "output": 0}
 
 
 async def get_chatbot_response(
@@ -15,6 +31,7 @@ async def get_chatbot_response(
     if json_mode:
         kwargs["response_format"] = {"type": "json_object"}
 
+    start = time.perf_counter()
     response = await client.chat.completions.create(
         model=model_name,
         messages=input_messages,
@@ -23,6 +40,25 @@ async def get_chatbot_response(
         max_tokens=2000,
         **kwargs,
     )
+    latency_ms = round((time.perf_counter() - start) * 1000)
+
+    usage = response.usage
+    input_tokens = usage.prompt_tokens if usage else 0
+    output_tokens = usage.completion_tokens if usage else 0
+
+    counter = _token_counter.get()
+    if counter is not None:
+        counter["input"] += input_tokens
+        counter["output"] += output_tokens
+
+    log.info(
+        "llm_call",
+        model=model_name,
+        latency_ms=latency_ms,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
+
     return response.choices[0].message.content
 
 

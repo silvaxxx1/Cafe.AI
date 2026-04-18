@@ -1,0 +1,11 @@
+[
+  {"input": "What's popular?", "expected_type": "popular"},
+  {"input": "What do most people order here?", "expected_type": "popular"},
+  {"input": "What are your best sellers?", "expected_type": "popular"},
+  {"input": "What coffee do you recommend?", "expected_type": "popular by category"},
+  {"input": "What pastry should I get?", "expected_type": "popular by category"},
+  {"input": "Recommend me a bakery item", "expected_type": "popular by category"},
+  {"input": "I just had a Latte, what goes well with it?", "expected_type": "apriori"},
+  {"input": "I ordered a Cappuccino, what else should I add?", "expected_type": "apriori"},
+  {"input": "I'm having an Almond Croissant, what drink pairs well?", "expected_type": "apriori"}
+]

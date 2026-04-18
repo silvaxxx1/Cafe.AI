@@ -10,17 +10,21 @@ Endpoints:
     GET  /        health check
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
-import logging
+import time
+import uuid
 import traceback
+import structlog
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+log = structlog.get_logger()
 
+from pathlib import Path
+from fastapi.responses import HTMLResponse
 from agent_controller import AgentController
+from metrics import MetricsStore
 
 app = FastAPI(title="Cafe.AI Local Dev Server")
 
@@ -32,7 +36,8 @@ app.add_middleware(
 )
 
 print("Loading agents...")
-agent_controller = AgentController()
+metrics_store = MetricsStore()
+agent_controller = AgentController(metrics=metrics_store)
 print("Agents ready.")
 
 
@@ -51,13 +56,28 @@ def health():
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
+    request_id = str(uuid.uuid4())[:8]
+    start = time.perf_counter()
+    log.info("request_start", request_id=request_id)
     try:
         payload = {"input": {"messages": request.input.messages}}
         response = await agent_controller.get_response(payload)
+        log.info("request_complete", request_id=request_id, total_ms=round((time.perf_counter() - start) * 1000))
         return {"output": response}
     except Exception as e:
-        logger.error("500 error:\n%s", traceback.format_exc())
+        log.error("request_error", request_id=request_id, error=str(e), detail=traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/metrics")
+def get_metrics():
+    return metrics_store.summary()
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    html = (Path(__file__).parent / "templates" / "dashboard.html").read_text()
+    return HTMLResponse(content=html)
 
 
 if __name__ == "__main__":

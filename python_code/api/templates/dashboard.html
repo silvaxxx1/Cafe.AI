@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cafe.AI — Observability Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:   #C67C4E;
+      --bg:       #1A110C;
+      --surface:  #251812;
+      --card:     #2F1E15;
+      --border:   #3D2518;
+      --text:     #F5EDE4;
+      --muted:    #8A6A57;
+      --green:    #5CB87A;
+      --red:      #E05C5C;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 32px 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.3px;
+    }
+
+    header span {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    #status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      margin-left: auto;
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    /* ── Stat cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .card .value.accent { color: var(--accent); }
+    .card .value.green  { color: var(--green);  }
+    .card .value.red    { color: var(--red);     }
+
+    .card .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── Charts ── */
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .chart-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .chart-card h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 16px;
+    }
+
+    canvas { max-height: 220px; }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 40px 0;
+    }
+
+    footer {
+      margin-top: 32px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Cafe.AI</h1>
+  <span>Observability Dashboard</span>
+  <span id="status-dot"></span>
+</header>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Total Requests</div>
+    <div class="value accent" id="total-requests">—</div>
+    <div class="sub" id="requests-60s">— in last 60s</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg Latency</div>
+    <div class="value" id="avg-latency">—</div>
+    <div class="sub">milliseconds</div>
+  </div>
+  <div class="card">
+    <div class="label">Guard Block Rate</div>
+    <div class="value red" id="block-rate">—</div>
+    <div class="sub">% of requests blocked</div>
+  </div>
+  <div class="card">
+    <div class="label">Tokens Used</div>
+    <div class="value green" id="total-tokens">—</div>
+    <div class="sub" id="token-split">— in / — out</div>
+  </div>
+</div>
+
+<div class="charts">
+
+  <div class="chart-card" style="grid-column: span 2;">
+    <h2>Latency — Last 20 Requests (ms)</h2>
+    <div id="latency-empty" class="empty" style="display:none">No requests yet</div>
+    <canvas id="latency-chart"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h2>Agent Distribution</h2>
+    <div id="agent-empty" class="empty" style="display:none">No requests yet</div>
+    <canvas id="agent-chart"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h2>Guard Decisions</h2>
+    <div id="guard-empty" class="empty" style="display:none">No requests yet</div>
+    <canvas id="guard-chart"></canvas>
+  </div>
+
+</div>
+
+<footer>Auto-refreshes every 5s &nbsp;·&nbsp; <a href="/metrics" style="color:var(--accent);">/metrics JSON</a></footer>
+
+<script>
+  const ACCENT = '#C67C4E';
+  const GREEN  = '#5CB87A';
+  const RED    = '#E05C5C';
+  const BLUE   = '#5B9BD5';
+  const MUTED  = '#8A6A57';
+  const GRID   = '#3D2518';
+  const TEXT   = '#F5EDE4';
+
+  const AGENT_COLORS = {
+    details_agent:        '#5B9BD5',
+    order_taking_agent:   ACCENT,
+    recommendation_agent: GREEN,
+  };
+
+  Chart.defaults.color = TEXT;
+  Chart.defaults.borderColor = GRID;
+
+  let latencyChart, agentChart, guardChart;
+
+  function initCharts() {
+    latencyChart = new Chart(document.getElementById('latency-chart'), {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: 'ms', data: [], borderColor: ACCENT, backgroundColor: ACCENT + '22', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: ACCENT }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: GRID } }, x: { grid: { color: GRID }, ticks: { maxRotation: 0, maxTicksLimit: 10 } } } }
+    });
+
+    agentChart = new Chart(document.getElementById('agent-chart'), {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [ACCENT, GREEN, BLUE], borderColor: '#2F1E15', borderWidth: 3 }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } } } }
+    });
+
+    guardChart = new Chart(document.getElementById('guard-chart'), {
+      type: 'bar',
+      data: { labels: ['Allowed', 'Blocked'], datasets: [{ data: [0, 0], backgroundColor: [GREEN, RED], borderRadius: 6 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: GRID } }, x: { grid: { display: false } } } }
+    });
+  }
+
+  function fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); }
+
+  async function refresh() {
+    try {
+      const res = await fetch('/metrics');
+      const d   = await res.json();
+
+      // cards
+      document.getElementById('total-requests').textContent = fmt(d.total_requests);
+      document.getElementById('requests-60s').textContent   = `${d.requests_last_60s} in last 60s`;
+      document.getElementById('avg-latency').textContent    = d.avg_latency_ms ? `${d.avg_latency_ms}ms` : '—';
+      document.getElementById('block-rate').textContent     = d.total_requests ? `${d.block_rate}%` : '—';
+      document.getElementById('total-tokens').textContent   = fmt(d.total_input_tokens + d.total_output_tokens);
+      document.getElementById('token-split').textContent    = `${fmt(d.total_input_tokens)} in / ${fmt(d.total_output_tokens)} out`;
+
+      // latency chart
+      const hasLatency = d.recent_latencies && d.recent_latencies.length > 0;
+      document.getElementById('latency-empty').style.display = hasLatency ? 'none' : 'block';
+      document.getElementById('latency-chart').style.display = hasLatency ? 'block' : 'none';
+      if (hasLatency) {
+        latencyChart.data.labels   = d.recent_latencies.map((_, i) => `#${i + 1}`);
+        latencyChart.data.datasets[0].data = d.recent_latencies.map(r => r.ms);
+        latencyChart.data.datasets[0].pointBackgroundColor = d.recent_latencies.map(r => AGENT_COLORS[r.agent] || MUTED);
+        latencyChart.update('none');
+      }
+
+      // agent chart
+      const agentEntries = Object.entries(d.agent_distribution || {});
+      document.getElementById('agent-empty').style.display = agentEntries.length ? 'none' : 'block';
+      document.getElementById('agent-chart').style.display = agentEntries.length ? 'block' : 'none';
+      if (agentEntries.length) {
+        agentChart.data.labels   = agentEntries.map(([k]) => k.replace('_agent', '').replace('_', ' '));
+        agentChart.data.datasets[0].data = agentEntries.map(([, v]) => v);
+        agentChart.data.datasets[0].backgroundColor = agentEntries.map(([k]) => AGENT_COLORS[k] || MUTED);
+        agentChart.update('none');
+      }
+
+      // guard chart
+      const g = d.guard_decisions || {};
+      const hasGuard = (g.allowed || 0) + (g.blocked || 0) > 0;
+      document.getElementById('guard-empty').style.display = hasGuard ? 'none' : 'block';
+      document.getElementById('guard-chart').style.display = hasGuard ? 'block' : 'none';
+      if (hasGuard) {
+        guardChart.data.datasets[0].data = [g.allowed || 0, g.blocked || 0];
+        guardChart.update('none');
+      }
+
+      document.getElementById('status-dot').style.background = GREEN;
+    } catch {
+      document.getElementById('status-dot').style.background = RED;
+    }
+  }
+
+  initCharts();
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+</body>
+</html>

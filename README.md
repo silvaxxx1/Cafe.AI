@@ -1,12 +1,12 @@
 # ☕ Fero Cafe — AI-Powered Coffee Shop Chatbot
 
-> **A full-stack conversational commerce app** built to explore multi-agent LLM pipelines in a real-world setting. A customer types naturally — *"I want a latte and a croissant"* — and a pipeline of specialized agents handles intent classification, menu validation, personalized recommendations, and order state across the conversation. The result is a cross-platform mobile app backed by a fully async Python API with 102 passing tests.
+> **A full-stack conversational commerce app** built to explore multi-agent LLM pipelines in a real-world setting. A customer types naturally — *"I want a latte and a croissant"* — and a pipeline of specialized agents handles intent classification, menu validation, personalized recommendations, and order state across the conversation. The result is a cross-platform mobile app backed by a fully async Python API with 90 passing tests, LLM evals, and a live observability dashboard.
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
 [![React Native](https://img.shields.io/badge/React%20Native-Expo-blue.svg)](https://expo.dev)
 [![Groq](https://img.shields.io/badge/Groq-llama--3.3-orange.svg)](https://groq.com)
-[![Tests](https://img.shields.io/badge/tests-102%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen.svg)]()
 
 ---
 
@@ -15,6 +15,26 @@
 ![Fero Cafe Demo](fero_demo.gif)
 
 *End-to-end walkthrough: multi-item ordering, guard agent, RAG-powered Q&A, and cart auto-population from chat*
+
+---
+
+## 📊 Observability Dashboard
+
+![Observability Dashboard](images/metrics_dashboard.png)
+
+*Live dashboard at `http://localhost:8000/dashboard` — request latency, token usage, agent distribution, and guard block rate. Auto-refreshes every 5s.*
+
+---
+
+## 🏛️ Architecture
+
+![Agent Architecture](images/chatbot_agent_architecture.jpg)
+
+---
+
+## 📱 Mobile App
+
+![Mobile App](images/mobile_app.png)
 
 ---
 
@@ -28,7 +48,9 @@
 | 🎯 **Personalized recommendations** | Apriori market basket analysis + popularity rankings |
 | 📱 **React Native app** | Browse menu, chat, review cart — one unified flow |
 | 🔄 **Provider-agnostic LLM** | Swap Groq, RunPod, or OpenAI with a single `.env` change |
-| ✅ **102 passing tests** | Full async suite with mocked LLM calls — no API key needed |
+| ✅ **90 passing tests** | Unit + eval runners — no API key needed for unit tests |
+| 📊 **Observability dashboard** | Live `/dashboard` — latency, tokens, routing, guard block rate |
+| 🧪 **LLM evals** | Guard, classification, recommendation accuracy tested against real LLM |
 | 🖼️ **Bundled product images** | Served from local assets — no Firebase Storage required |
 
 ---
@@ -72,7 +94,8 @@ React Native App (Expo)
 | **Frontend** | React Native + Expo Router | Cross-platform, hot reload |
 | **Styling** | NativeWind (Tailwind) | Utility-first, rapid UI |
 | **Recommendations** | scikit-learn (Apriori) | Market basket analysis |
-| **Testing** | pytest + AsyncMock | 102 tests, no API key needed |
+| **Testing** | pytest + AsyncMock | 90 tests, no API key needed for unit tests |
+| **Observability** | structlog + Chart.js dashboard | Structured logs + live `/dashboard` |
 | **Product catalog** | Firebase Realtime DB | Live product data |
 | **Product images** | Bundled local assets | No Firebase Storage required |
 
@@ -163,24 +186,23 @@ curl -X POST http://localhost:8000/chat \
 
 ```bash
 cd python_code/api
+
+# Unit tests (no API key needed)
 python -m pytest tests/ -v
+
+# LLM evals (requires .env with valid Groq key)
+python -m tests.evals.eval_guard
+python -m tests.evals.eval_classification
+python -m tests.evals.eval_recommendation
+
+# Or run everything
+make test   # unit tests
+make evals  # LLM evals
 ```
 
-```
-============================= test session starts ==============================
-collected 102 items
+90 unit tests cover all agents, the server, and the eval runner logic. All LLM calls are mocked with `AsyncMock` — no API key needed.
 
-tests/test_agent_controller.py .........                                 [  8%]
-tests/test_classification_agent.py ............                          [ 19%]
-tests/test_guard_agent.py ..............................                  [ 48%]
-tests/test_order_taking_agent.py ......................                   [ 69%]
-tests/test_recommendation_agent.py ...................                    [ 88%]
-tests/test_server.py ..........                                          [ 97%]
-
-============================== 102 passed ==============================
-```
-
-> All LLM calls are mocked with `AsyncMock` — no API key required to run the suite.
+Evals hit the real LLM and report per-case PASS/FAIL with a pass rate. Exit 1 if below 80%.
 
 ---
 
@@ -300,7 +322,7 @@ Cafe.AI/
     │   │   ├── recommendation_agent.py
     │   │   ├── agent_protocol.py     # async Protocol
     │   │   └── utils.py
-    │   ├── tests/                 # 102 tests ✅
+    │   ├── tests/                 # 90 tests ✅ (unit + eval runners)
     │   ├── recommendation_objects/
     │   ├── local_server.py        # Dev server (async FastAPI)
     │   ├── main.py                # RunPod entry point
@@ -348,9 +370,13 @@ Cafe.AI/
 
 ## 🗺️ Roadmap
 
+- [x] **90 tests** — unit + eval runner tests, no API key needed for unit tests
+- [x] **Evals** — guard, classification, recommendation runners against the real LLM
+- [x] **Observability** — structlog structured logging + live `/dashboard`
+- [ ] **CI/CD** — GitHub Actions: run tests on every push
 - [ ] **Streaming responses** — currently full round-trip; streaming is the next planned feature
 - [ ] **Server-side session memory** — conversation state currently lives in React state and is lost on page refresh
-- [ ] **Rename env vars** — `RUNPOD_TOKEN` / `RUNPOD_CHATBOT_URL` will be aliased to provider-neutral names
+- [ ] **Production hardening** — rate limiting, startup config validation
 
 ---
 

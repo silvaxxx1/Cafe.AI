@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system \
+            -r python_code/api/requirements.txt
+
+      - name: Pin httpx
+        run: uv pip install --system "httpx==0.27.2"
+
+      - name: Set dummy env vars
+        run: |
+          echo "RUNPOD_TOKEN=test-key"            >> $GITHUB_ENV
+          echo "RUNPOD_CHATBOT_URL=http://fake/v1" >> $GITHUB_ENV
+          echo "MODEL_NAME=test-model"             >> $GITHUB_ENV
+
+      - name: Run tests
+        run: make test
