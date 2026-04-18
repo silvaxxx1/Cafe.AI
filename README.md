@@ -26,18 +26,6 @@
 
 ---
 
-## 🏛️ Architecture
-
-![Agent Architecture](images/chatbot_agent_architecture.jpg)
-
----
-
-## 📱 Mobile App
-
-![Mobile App](images/mobile_app.png)
-
----
-
 ## ✨ Features
 
 | Feature | What it does |
@@ -373,7 +361,7 @@ Cafe.AI/
 - [x] **90 tests** — unit + eval runner tests, no API key needed for unit tests
 - [x] **Evals** — guard, classification, recommendation runners against the real LLM
 - [x] **Observability** — structlog structured logging + live `/dashboard`
-- [ ] **CI/CD** — GitHub Actions: run tests on every push
+- [x] **CI/CD** — GitHub Actions: run tests on every push
 - [ ] **Streaming responses** — currently full round-trip; streaming is the next planned feature
 - [ ] **Server-side session memory** — conversation state currently lives in React state and is lost on page refresh
 - [ ] **Production hardening** — rate limiting, startup config validation
