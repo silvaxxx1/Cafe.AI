@@ -10,13 +10,9 @@ This document captures everything in the current codebase that is non-obvious, w
 
 `local_server.py` and all agents are now fully `async def`. LLM calls use `AsyncOpenAI`. Requests no longer queue behind each other under concurrent load.
 
-### 2. Menu is Hardcoded in System Prompt
+### ~~2. Menu is Hardcoded in System Prompt~~ ✅ Fixed
 
-The full 19-item menu with prices is a hardcoded multiline string inside `OrderTakingAgent.__init__`. It also exists separately in Firebase (frontend display) and `popularity_recommendation.csv` (ranking).
-
-**File:** `agents/order_taking_agent.py:20-45`
-
-**Impact:** Any menu change (new item, price update) requires editing the system prompt string manually. The three copies can diverge silently.
+`menu.json` is now the single source of truth. `AgentController` loads it at startup and injects `menu_text` into `OrderTakingAgent.__init__`. Menu changes only require editing `menu.json`.
 
 ### 3. No Streaming
 
@@ -64,34 +60,21 @@ All agents use deterministic generation. This is correct for guard and classific
 
 `runpod==1.7.1` is in `requirements.txt` even though it's only used in `main.py` (production). Every local `uv pip install -r requirements.txt` installs an unnecessary package.
 
-### 9. No Input Validation on `/chat`
+### ~~9. No Input Validation on `/chat`~~ ✅ Fixed
 
-```python
-class ChatInput(BaseModel):
-    messages: list           # untyped — accepts any list content
-```
+`messages` is now typed as `list[Message]` with required `role` and `content` string fields. Empty lists are rejected. Invalid payloads return 422 before reaching any agent.
 
-Any list (including `[null]`, `[1, 2, 3]`) passes validation. Agents will crash downstream with unhelpful errors.
+### ~~10. CORS Fully Open~~ ✅ Fixed
 
-### 10. CORS Fully Open
+`allow_origins` is now locked to `localhost:8081`, `localhost:19006`, and `127.0.0.1:8081`. No more `allow_origins=["*"]`.
 
-```python
-app.add_middleware(CORSMiddleware, allow_origins=["*"], ...)
-```
+### ~~11. No Rate Limiting~~ ✅ Fixed
 
-Appropriate for local dev. Must be locked down (specific origins) before any public deployment.
+`slowapi` is wired in — 20 requests/minute per IP. Exceeding the limit returns 429 automatically.
 
-### 11. No Rate Limiting
+### ~~11b. No Startup Config Validation~~ ✅ Fixed
 
-The `/chat` endpoint has no rate limiting. A single client can send unlimited requests, exhausting the Groq free-tier quota or causing runaway costs on RunPod. Fix: `slowapi` (`@limiter.limit("20/minute")`). Part of Stage 8.
-
-**File:** `local_server.py`
-
-### 11b. No Startup Config Validation
-
-The server starts even if required env vars (`RUNPOD_TOKEN`, `RUNPOD_CHATBOT_URL`, `MODEL_NAME`) are missing. The first real request will crash with a confusing error instead of failing clearly at boot. Fix: an `@app.on_event("startup")` check. Part of Stage 8.
-
-**File:** `local_server.py`
+Server now checks for `RUNPOD_TOKEN`, `RUNPOD_CHATBOT_URL`, and `MODEL_NAME` at startup. If any are missing, it prints a clear error and exits before binding the port.
 
 ### 11c. Recommendation Agent: Empty Result Handling
 
