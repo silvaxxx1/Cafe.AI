@@ -36,6 +36,7 @@ async def run(cases: list[dict]) -> tuple[int, int]:
         passed += ok
         status = "PASS" if ok else "FAIL"
         print(f"  {status}  [{case['expected']:22}] '{case['input']}'  →  {actual}")
+        await asyncio.sleep(0.5)
 
     return passed, len(cases)
 
