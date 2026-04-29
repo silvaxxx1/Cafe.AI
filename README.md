@@ -1,12 +1,16 @@
 # ☕ Fero Cafe — AI-Powered Coffee Shop Chatbot
 
-> **A full-stack conversational commerce app** built to explore multi-agent LLM pipelines in a real-world setting. A customer types naturally — *"I want a latte and a croissant"* — and a pipeline of specialized agents handles intent classification, menu validation, personalized recommendations, and order state across the conversation. The result is a cross-platform mobile app backed by a fully async Python API with 90 passing tests, LLM evals, and a live observability dashboard.
+> **Open source.** A full-stack conversational commerce app built to explore multi-agent LLM pipelines in a real-world setting. A customer types naturally — *"I want a latte and a croissant"* — and a pipeline of specialized agents handles intent classification, menu validation, personalized recommendations, and order state across the conversation. The result is a cross-platform mobile app backed by a fully async Python API with 90 passing tests, LLM evals, and a live observability dashboard.
+>
+> This is v2. The project is actively being enhanced — see the [Roadmap](#roadmap) for what's coming.
 
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
 [![React Native](https://img.shields.io/badge/React%20Native-Expo-blue.svg)](https://expo.dev)
 [![Groq](https://img.shields.io/badge/Groq-llama--3.3-orange.svg)](https://groq.com)
 [![Tests](https://img.shields.io/badge/tests-90%20passing-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Open Source](https://img.shields.io/badge/open%20source-yes-brightgreen.svg)]()
 
 ---
 
@@ -358,13 +362,16 @@ Cafe.AI/
 
 ## 🗺️ Roadmap
 
+**v2 — completed**
 - [x] **90 tests** — unit + eval runner tests, no API key needed for unit tests
 - [x] **Evals** — guard, classification, recommendation runners against the real LLM
 - [x] **Observability** — structlog structured logging + live `/dashboard`
 - [x] **CI/CD** — GitHub Actions: run tests on every push
-- [ ] **Streaming responses** — currently full round-trip; streaming is the next planned feature
-- [ ] **Server-side session memory** — conversation state currently lives in React state and is lost on page refresh
-- [ ] **Production hardening** — rate limiting, startup config validation
+
+**v3 — in progress**
+- [ ] **Streaming responses** — currently full round-trip; SSE streaming is next
+- [ ] **Server-side session memory** — conversation state currently lives in React state and is lost on page refresh; SQLite persistence planned
+- [ ] **Production hardening** — rate limiting via `slowapi`, startup config validation, locked CORS origins, typed input validation
 
 ---
 
