@@ -20,6 +20,9 @@ coffee_shop_customer_service_chatbot/coffee_shop_app/web-build/
 .DS_Store
 Thumbs.db
 
+# Runtime data
+sessions.db
+
 # Personal notes — not for repo
 SENIOR_UPGRADE.md
 docs/

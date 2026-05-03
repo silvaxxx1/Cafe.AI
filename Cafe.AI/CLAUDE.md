@@ -108,21 +108,36 @@ All agents implement `agent_protocol.py` with an `async get_response(messages)` 
 - `order_taking_agent.py` — Multi-turn order collection, menu validation, triggers recommendation upsell automatically before closing
 - `recommendation_agent.py` — Apriori (market basket) or popularity rankings, loaded from static files at startup
 
-`utils.py` wraps all OpenAI SDK calls; agents never import the SDK directly. All structured-output agents use `json_mode=True` to guarantee valid JSON. All `json.loads()` calls have `try/except` fallbacks as a safety net.
+`utils.py` wraps all OpenAI SDK calls; agents never import the SDK directly. All structured-output agents use `json_mode=True` to guarantee valid JSON. All `json.loads()` calls have `try/except` fallbacks as a safety net. Every LLM call is timed and logged via `structlog` (latency_ms, input/output tokens).
 
-`agent_controller.py` uses `.get()` on the agent dict (not direct key access) — invalid agent names return a graceful error instead of crashing.
+`agent_controller.py` uses `.get()` on the agent dict (not direct key access) — invalid agent names return a graceful error instead of crashing. Accepts an optional `MetricsStore` for observability — logs guard decisions and agent routing on every request.
+
+`metrics.py` — in-memory `MetricsStore` (thread-safe deque, 500 records). Records per-request: latency, guard decision, chosen agent, token counts. Served at `/metrics` and visualised at `/dashboard`.
 
 ### Local HTTP Server (`local_server.py`)
 
 FastAPI wrapper (fully async) that mirrors the RunPod response format so the frontend works unchanged:
-- `POST /chat` — `{ input: { messages } }` → `{ output: { role, content, memory } }`
+- `POST /chat` — `{ input: { messages }, session_id? }` → `{ output: { role, content, memory } }`
+- `POST /chat/stream` — same body → SSE stream of `{"type":"token","delta":"..."}` events, terminated by `{"type":"done","memory":{...}}`
+- `GET /session/{id}` — returns `{ messages: [...] }` to restore prior conversation on reload
+- `DELETE /session/{id}` — clears a session (frontend "New chat" button)
 - `GET /` — health check
+- `GET /metrics` — JSON metrics snapshot (latency, tokens, agent distribution, guard block rate)
+- `GET /dashboard` — live Chart.js observability dashboard, auto-refreshes every 5s
+
+Session persistence (`session.py`): SQLite-backed `SessionStore`. Every turn saves the full messages list keyed by `session_id`. Frontend generates a UUID `session_id` stored in `localStorage` (falls back to `"default"` on native). `sse-starlette>=1.8.0,<3.0.0` and `starlette==0.38.6` are pinned — sse-starlette 3.x pulls starlette 1.0.0 which breaks FastAPI 0.115.0.
+
+Production hardening:
+- CORS locked to `localhost:8081`, `localhost:19006`, `127.0.0.1:8081`
+- Rate limited to 20 req/min per IP via `slowapi`
+- Startup exits with a clear error if `RUNPOD_TOKEN`, `RUNPOD_CHATBOT_URL`, or `MODEL_NAME` are missing
+- `messages` typed as `list[Message]` — invalid payloads return 422 before reaching agents
 
 ### Frontend (React Native / Expo Router)
 
 File-based routing under `app/`:
 - `(tabs)/home.tsx` — menu browse, category filter, add to cart
-- `(tabs)/chatRoom.tsx` — chat UI; POSTs full message history to backend; auto-fills cart when `memory.order` is present
+- `(tabs)/chatRoom.tsx` — chat UI; streams responses via `POST /chat/stream`; loads prior session on mount; auto-fills cart when `memory.order` is present; "New chat" button clears session
 - `(tabs)/order.tsx` — cart review and checkout
 - `details.tsx` — product detail screen
 
@@ -134,7 +149,7 @@ File-based routing under `app/`:
 
 ```
 User sends message (chatRoom.tsx)
-  → POST to /chat with full message history
+  → POST to /chat/stream (SSE) with full message history + session_id
   → agent pipeline: Guard → Classification → Agent
   → returns { role, content, memory: { agent, order, ... } }
   → UI appends message
