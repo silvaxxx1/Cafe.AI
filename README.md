@@ -52,7 +52,7 @@
 ```
 React Native App (Expo)
         │
-        │  POST /chat  { messages: [...] }
+        │  POST /chat/stream  { messages, session_id }  (SSE)
         ▼
    FastAPI Server  (local_server.py)  ← fully async
         │
@@ -368,10 +368,10 @@ Cafe.AI/
 - [x] **Observability** — structlog structured logging + live `/dashboard`
 - [x] **CI/CD** — GitHub Actions: run tests on every push
 
-**v3 — in progress**
-- [ ] **Streaming responses** — currently full round-trip; SSE streaming is next
-- [ ] **Server-side session memory** — conversation state currently lives in React state and is lost on page refresh; SQLite persistence planned
-- [ ] **Production hardening** — rate limiting via `slowapi`, startup config validation, locked CORS origins, typed input validation
+**v3 — completed**
+- [x] **Streaming responses** — `POST /chat/stream` SSE endpoint; tokens stream as they're generated; first token at ~1s
+- [x] **Server-side session memory** — SQLite-backed `SessionStore`; `GET /session/{id}` restores history on reload; "New chat" button clears it
+- [x] **Production hardening** — rate limiting via `slowapi`, startup config validation, locked CORS origins, typed input validation
 
 ---
 

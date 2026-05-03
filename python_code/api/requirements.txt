@@ -9,3 +9,5 @@ uvicorn==0.30.6
 sentence-transformers>=3.0.0
 structlog>=25.0.0
 slowapi>=0.1.9
+sse-starlette>=1.8.0,<3.0.0
+starlette==0.38.6

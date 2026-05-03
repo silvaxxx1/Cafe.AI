@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
 import asyncio
-from .utils import get_chatbot_response
+from .utils import get_chatbot_response, get_chatbot_response_stream
 from openai import AsyncOpenAI
 from copy import deepcopy
 from pinecone import Pinecone
@@ -84,3 +84,43 @@ class DetailsAgent():
             "content": output,
             "memory": {"agent": "details_agent"}
         }
+
+    async def get_stream_response(self, messages):
+        messages = deepcopy(messages)
+
+        if not self.rag_enabled:
+            content = "I don't have detailed product info available right now, but I'd be happy to help you place an order or give you a recommendation!"
+            yield {"type": "token", "delta": content}
+            yield {"type": "done", "memory": {"agent": "details_agent"}}
+            return
+
+        user_message = messages[-1]['content']
+
+        loop = asyncio.get_event_loop()
+        embedding = await loop.run_in_executor(
+            None,
+            lambda: self.embedding_model.encode(user_message).tolist()
+        )
+
+        result = self.get_closest_results(self.index_name, embedding)
+        source_knowledge = "\n".join(
+            [x['metadata']['text'].strip() + '\n' for x in result['matches']]
+        )
+
+        prompt = f"""
+        Using the contexts below, answer the query.
+
+        Contexts:
+        {source_knowledge}
+
+        Query: {user_message}
+        """
+
+        system_prompt = "You are a customer support agent for a coffee shop called Fero Cafe. You should answer every question as if you are a waiter and provide the necessary information to the user regarding their orders."
+        messages[-1]['content'] = prompt
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+
+        async for token in get_chatbot_response_stream(self.client, self.model_name, input_messages):
+            yield {"type": "token", "delta": token}
+
+        yield {"type": "done", "memory": {"agent": "details_agent"}}

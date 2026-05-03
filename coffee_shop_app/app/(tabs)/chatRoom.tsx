@@ -1,10 +1,10 @@
 import { TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, StyleSheet, StatusBar } from 'react-native';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import MessageList from '@/components/MessageList';
 import { MessageInterface } from '@/types/types';
 import { GestureHandlerRootView, TextInput } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import { callChatBotAPI } from '@/services/chatBot';
+import { callChatBotStreamAPI, clearSession, getSessionId, loadSession } from '@/services/chatBot';
 import { useCart } from '@/components/CartContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -17,12 +17,21 @@ const ChatRoom = () => {
 
   const [messages, setMessages] = useState<MessageInterface[]>([]);
   const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [sessionLoading, setSessionLoading] = useState<boolean>(true);
   const textRef = useRef('');
   const inputRef = useRef<TextInput>(null);
+  const sessionIdRef = useRef<string>(getSessionId());
+
+  useEffect(() => {
+    loadSession().then((saved) => {
+      if (saved.length > 0) setMessages(saved);
+      setSessionLoading(false);
+    });
+  }, []);
 
   const handleSendMessage = async () => {
     const message = textRef.current.trim();
-    if (!message) return;
+    if (!message || sessionLoading) return;
     try {
       const inputMessages = [...messages, { content: message, role: 'user' }];
       setMessages(inputMessages);
@@ -30,18 +39,54 @@ const ChatRoom = () => {
       inputRef?.current?.clear();
       setIsTyping(true);
 
-      const response = await callChatBotAPI(inputMessages);
+      // Append an empty assistant bubble that we fill in as tokens arrive
+      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
       setIsTyping(false);
-      setMessages((prev) => [...prev, response]);
 
-      if (response?.memory?.order) {
+      let fullContent = '';
+      let memory: any = undefined;
+
+      for await (const event of callChatBotStreamAPI(inputMessages, sessionIdRef.current)) {
+        if (event.type === 'token') {
+          fullContent += event.delta;
+          setMessages((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = { role: 'assistant', content: fullContent };
+            return next;
+          });
+        } else if (event.type === 'done') {
+          memory = event.memory;
+        } else if (event.type === 'error') {
+          throw new Error(event.message);
+        }
+      }
+
+      // Attach memory to the final message so cart sync works
+      if (memory !== undefined) {
+        setMessages((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = { role: 'assistant', content: fullContent, memory };
+          return next;
+        });
+      }
+
+      if (memory?.order) {
         emptyCart();
-        response.memory.order.forEach((item: any) => addToCart(item.item, item.quantity));
+        memory.order.forEach((item: any) => addToCart(item.item, item.quantity));
       }
     } catch (err: any) {
       setIsTyping(false);
       const errMsg = err?.message ?? 'Something went wrong. Please try again.';
-      setMessages((prev) => [...prev, { role: 'assistant', content: `⚠️ ${errMsg}` }]);
+      setMessages((prev) => {
+        // Replace empty streaming bubble (if present) or append error
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && last.content === '') {
+          const next = [...prev];
+          next[next.length - 1] = { role: 'assistant', content: `⚠️ ${errMsg}` };
+          return next;
+        }
+        return [...prev, { role: 'assistant', content: `⚠️ ${errMsg}` }];
+      });
     }
   };
 
@@ -66,7 +111,18 @@ const ChatRoom = () => {
             </View>
           </View>
 
-          <View style={{ width: 40 }} />
+          <TouchableOpacity
+            onPress={async () => {
+              await clearSession();
+              setMessages([]);
+            }}
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityLabel="New chat"
+          >
+            <Ionicons name="create-outline" size={22} color={theme.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* Messages */}
@@ -76,7 +132,7 @@ const ChatRoom = () => {
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <View style={{ flex: 1 }}>
-            {messages.length === 0 && !isTyping && (
+            {messages.length === 0 && !isTyping && !sessionLoading && (
               <View style={styles.emptyState}>
                 <Text style={[styles.emptyTitle, { color: theme.text }]}>Hey there 👋</Text>
                 <Text style={[styles.emptyBody, { color: theme.textMuted }]}>

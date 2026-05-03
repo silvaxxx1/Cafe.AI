@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 import os
-from .utils import get_chatbot_response
+from .utils import get_chatbot_response, get_chatbot_response_stream
 from openai import AsyncOpenAI
 from copy import deepcopy
 from dotenv import load_dotenv
@@ -175,3 +175,45 @@ class RecommendationAgent():
             "content": output,
             "memory": {"agent": "recommendation_agent"}
         }
+
+    async def get_stream_response(self, messages):
+        messages = deepcopy(messages)
+
+        recommendation_classification = await self.recommendation_classification(messages)
+        recommendation_type = recommendation_classification['recommendation_type']
+        recommendations = []
+        if recommendation_type == "apriori":
+            recommendations = self.get_apriori_recommendation(recommendation_classification['parameters'])
+        elif recommendation_type == "popular":
+            recommendations = self.get_popular_recommendation()
+        elif recommendation_type == "popular by category":
+            recommendations = self.get_popular_recommendation(recommendation_classification['parameters'])
+
+        if not recommendations:
+            content = "Sorry, I can't help with that. Can I help you with your order?"
+            yield {"type": "token", "delta": content}
+            yield {"type": "done", "memory": {"agent": "recommendation_agent"}}
+            return
+
+        recommendations_str = ", ".join(recommendations)
+
+        system_prompt = f"""
+        You are a helpful AI assistant for a coffee shop application which serves drinks and pastries.
+        your task is to recommend items to the user based on their input message. And respond in a friendly but concise way. And put it an unordered list with a very small description.
+
+        I will provide what items you should recommend to the user based on their order in the user message.
+        """
+
+        prompt = f"""
+        {messages[-1]['content']}
+
+        Please recommend me those items exactly: {recommendations_str}
+        """
+
+        messages[-1]['content'] = prompt
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+
+        async for token in get_chatbot_response_stream(self.client, self.model_name, input_messages):
+            yield {"type": "token", "delta": token}
+
+        yield {"type": "done", "memory": {"agent": "recommendation_agent"}}
