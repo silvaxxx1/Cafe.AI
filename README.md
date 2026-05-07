@@ -364,16 +364,29 @@ Cafe.AI/
 
 ## 🗺️ Roadmap
 
-**v2 — completed**
-- [x] **90 tests** — unit + eval runner tests, no API key needed for unit tests *(now 120 after v3)*
-- [x] **Evals** — guard, classification, recommendation runners against the real LLM
-- [x] **Observability** — structlog structured logging + live `/dashboard`
-- [x] **CI/CD** — GitHub Actions: run tests on every push
+**V1 — Complete ✅**
+- [x] Multi-agent pipeline — Guard → Classification → Details / Order / Recommendation
+- [x] Fully async FastAPI + all agents
+- [x] SSE streaming — `POST /chat/stream`; first token at ~1s
+- [x] SQLite session persistence — restores conversation on reload
+- [x] Dynamic menu — `menu.json` single source of truth, injected at startup
+- [x] Observability — structlog structured logging + live `/dashboard`
+- [x] LLM evals — guard, classification, recommendation runners (80% threshold)
+- [x] 120 passing tests — unit + eval runners, no API key needed for unit tests
+- [x] Production hardening — rate limiting, CORS, startup validation, typed input
+- [x] CI/CD — GitHub Actions on every push
 
-**v3 — completed**
-- [x] **Streaming responses** — `POST /chat/stream` SSE endpoint; tokens stream as they're generated; first token at ~1s
-- [x] **Server-side session memory** — SQLite-backed `SessionStore`; `GET /session/{id}` restores history on reload; "New chat" button clears it
-- [x] **Production hardening** — rate limiting via `slowapi`, startup config validation, locked CORS origins, typed input validation
+**V2 — Coming Soon 🚧**
+- [ ] Product images inline in chat responses
+- [ ] Functional search and size selection in the frontend
+- [ ] Fix cart-wipe bug when order agent responds
+- [ ] RecommendationAgent turn memory — no more repeated suggestions
+- [ ] Wider guard/classification context window (3 → 6 messages)
+- [ ] Response variation for RecommendationAgent (`temperature=0.7`)
+- [ ] Wire up Pinecone so DetailsAgent answers product questions via RAG
+- [ ] Full TypeScript types for agent memory shapes
+
+See [`V2_PLAN.md`](../V2_PLAN.md) for the full breakdown with file references and implementation details.
 
 ---
 
