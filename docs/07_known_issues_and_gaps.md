@@ -14,11 +14,9 @@ This document captures everything in the current codebase that is non-obvious, w
 
 `menu.json` is now the single source of truth. `AgentController` loads it at startup and injects `menu_text` into `OrderTakingAgent.__init__`. Menu changes only require editing `menu.json`.
 
-### 3. No Streaming
+### ~~3. No Streaming~~ ✅ Fixed
 
-Every LLM call waits for the full response before returning. The user sees nothing for 3-8 seconds, then the full message appears.
-
-**Impact:** Poor UX for long responses (especially order summaries).
+`POST /chat/stream` SSE endpoint is live in `local_server.py`. `agent_controller.get_stream_response()` handles the pipeline. DetailsAgent and RecommendationAgent truly stream; OrderTakingAgent fake-streams (JSON mode constraint). Frontend uses fetch+ReadableStream, updating the bubble in-place. First token arrives in ~1s.
 
 ### 4. State Lives in Message History
 
@@ -66,7 +64,7 @@ All agents use deterministic generation. This is correct for guard and classific
 
 ### ~~10. CORS Fully Open~~ ✅ Fixed
 
-`allow_origins` is now locked to `localhost:8081`, `localhost:19006`, and `127.0.0.1:8081`. No more `allow_origins=["*"]`.
+`allow_origins` is now locked to `localhost:8081`, `localhost:19006`, and `127.0.0.1:8081`. Production deploy adds the Vercel frontend URL. No more `allow_origins=["*"]`.
 
 ### ~~11. No Rate Limiting~~ ✅ Fixed
 
@@ -161,7 +159,7 @@ The memory shape varies by agent and is accessed with optional chaining (`respon
 
 ### ~~21. No Tests~~ ✅ Fixed
 
-Backend now has 90 passing tests across all agents, the server, and the eval runners (`pytest tests/ -v`). Uses `AsyncMock` — no API key needed to run. Frontend tests remain unimplemented.
+Backend now has 120 passing tests across all agents, the server (including streaming and session endpoints), and the eval runners (`pytest tests/ -v`). Uses `AsyncMock` — no API key needed to run. Frontend tests remain unimplemented (tracked in V2 Stage 5).
 
 ### ~~22. No Observability~~ ✅ Fixed
 

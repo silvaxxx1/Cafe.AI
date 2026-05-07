@@ -15,7 +15,8 @@ Read these in order before making any changes.
 | 04 | [Frontend Deep Dive](./04_frontend.md) | All screens, components, services, routing, and state management |
 | 05 | [Data, Models & Notebooks](./05_data_and_models.md) | Recommendation data, Apriori rules, Firebase schema, Pinecone setup, notebooks |
 | 06 | [Environment & Setup](./06_environment_and_setup.md) | Every env var, what it does, local dev commands, Docker, provider swap |
-| 07 | [Known Issues & Gaps](./07_known_issues_and_gaps.md) | 25 documented issues: bugs, fragile patterns, design gaps |
+| 07 | [Known Issues & Gaps](./07_known_issues_and_gaps.md) | Open issues, bugs, fragile patterns — the V2 backlog |
+| 08 | [Deployment Guide](./08_deployment.md) | Vercel + Render production deploy, SQLite persistence, GitHub V1 release, showcase checklist |
 
 ---
 
@@ -24,12 +25,12 @@ Read these in order before making any changes.
 - **Backend:** Python 3.12, FastAPI, OpenAI SDK (provider-agnostic), 5 agents
 - **Frontend:** React Native 0.81.5, Expo 54, Expo Router, NativeWind
 - **LLM:** Any OpenAI-compatible API (Groq locally, RunPod in production)
-- **Databases:** Firebase Realtime DB (menu), Pinecone (RAG, optional)
-- **State:** Embedded in message `memory` field — no server-side session
-- **Tests:** 90 passing — unit tests + eval runner tests (`make test`)
+- **Databases:** Firebase Realtime DB (menu), Pinecone (RAG, optional), SQLite (sessions)
+- **State:** SQLite-backed `SessionStore` — session restored on reload, cleared via "New chat"
+- **Tests:** 120 passing — unit tests + eval runner tests (`make test`)
 - **Evals:** Guard, classification, recommendation runners against real LLM (`make evals`)
 - **Observability:** structlog structured logging + live Chart.js dashboard at `/dashboard`
-- **Streaming:** Not implemented
+- **Streaming:** `POST /chat/stream` SSE — tokens stream as generated, first token ~1s
 - **Async:** Fully async FastAPI + agents
 
 ---

@@ -385,6 +385,7 @@ Cafe.AI/
 - [ ] Response variation for RecommendationAgent (`temperature=0.7`)
 - [ ] Wire up Pinecone so DetailsAgent answers product questions via RAG
 - [ ] Full TypeScript types for agent memory shapes
+- [ ] Frontend tests — CartContext, MessageItem, productService (Jest + jest-expo)
 
 See [`V2_PLAN.md`](../V2_PLAN.md) for the full breakdown with file references and implementation details.
 

@@ -20,10 +20,13 @@ python development_code.py   # CLI chat for quick testing
 
 The server exposes:
 ```
-POST /chat        { "input": { "messages": [...] } }  →  { "output": { role, content, memory } }
-GET  /            health check
-GET  /metrics     JSON metrics snapshot
-GET  /dashboard   live observability dashboard (Chart.js, auto-refreshes every 5s)
+POST /chat              { "input": { "messages": [...] }, "session_id"? }  →  { "output": { role, content, memory } }
+POST /chat/stream       same body  →  SSE stream of { type, delta } / { type, memory } events
+GET  /session/{id}      →  { messages: [...] }   restore prior conversation on reload
+DELETE /session/{id}    →  { status: "cleared" } start fresh ("New chat" button)
+GET  /                  health check
+GET  /metrics           JSON metrics snapshot
+GET  /dashboard         live observability dashboard (Chart.js, auto-refreshes every 5s)
 ```
 
 ## Environment Variables
@@ -83,16 +86,17 @@ python -m tests.evals.eval_recommendation
 
 | File | Purpose |
 |---|---|
-| `local_server.py` | FastAPI dev server — `/chat`, `/metrics`, `/dashboard` |
+| `local_server.py` | FastAPI dev server — `/chat`, `/chat/stream`, `/session`, `/metrics`, `/dashboard` |
 | `main.py` | RunPod serverless handler — production only |
 | `development_code.py` | CLI interactive chat — quick testing without HTTP |
 | `agent_controller.py` | Orchestrates the full agent pipeline + records metrics |
+| `session.py` | SQLite-backed `SessionStore` — persists message history by session_id |
 | `agents/utils.py` | OpenAI SDK wrapper — logs every LLM call via structlog |
 | `metrics.py` | In-memory MetricsStore — tracks latency, tokens, routing per request |
 | `templates/dashboard.html` | Chart.js dashboard served at `/dashboard` |
 | `tests/eval_data/` | JSON eval datasets for guard, classification, recommendation |
 | `tests/evals/` | Eval runners that hit the real LLM |
-| `Dockerfile` | Builds Docker image for RunPod deployment |
+| `Dockerfile` | Builds Docker image for RunPod / Render deployment |
 
 ## Deploying to RunPod
 
