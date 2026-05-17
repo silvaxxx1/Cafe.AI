@@ -49,7 +49,7 @@ All agents that require structured JSON output pass `json_mode=True` to `get_cha
 
 **Purpose:** Safety filter. Blocks questions unrelated to the coffee shop before they reach any specialist agent.
 
-**Input:** Last 3 messages from history (`messages[-3:]`).
+**Input:** Last `CONTEXT_WINDOW` (6) messages from history — covers ~3 back-and-forth turns.
 
 **System prompt logic:**
 - Allowed: coffee shop questions, menu queries, ordering, recommendations
@@ -90,7 +90,7 @@ def postprocess(self, output):
 
 ## ClassificationAgent (`classification_agent.py`)
 
-**Purpose:** Intent router. Reads the last 3 messages and decides which specialist agent should handle this turn.
+**Purpose:** Intent router. Reads the last `CONTEXT_WINDOW` (6) messages and decides which specialist agent should handle this turn.
 
 **Three possible routes:**
 - `details_agent` — questions about the shop, menu, ingredients, hours, location
@@ -281,7 +281,7 @@ Same as popularity but filtered first. Categories: `Coffee`, `Bakery`, `Flavours
 
 ### How the agent decides which strategy to use
 
-`recommendation_classification(messages)` — an LLM call that reads the user's message and returns:
+`recommendation_classification(messages, already_recommended=[])` — an LLM call that reads the user's message. If `already_recommended` is non-empty (populated from the prior turn's `memory.last_recommendations`), those items are injected into the system prompt so the agent avoids repeating them. Returns:
 ```json
 {
   "chain of thought": "...",
@@ -311,10 +311,13 @@ The LLM is told exactly which items to recommend — it only generates the natur
 
 **Returned memory shape:**
 ```json
-{ "agent": "recommendation_agent" }
+{
+  "agent": "recommendation_agent",
+  "last_recommendations": ["Cappuccino", "Croissant"]
+}
 ```
 
-No state carried forward.
+`last_recommendations` is the resolved list of product names from this turn. The next turn reads it to avoid repeating the same suggestions. The natural-language response call uses `temperature=0.7` for varied phrasing; the classification call stays at `temperature=0`.
 
 ---
 

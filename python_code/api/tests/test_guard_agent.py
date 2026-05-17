@@ -115,10 +115,10 @@ class TestGuardAgentMessageTruncation:
 
         call_args = mock_llm.call_args[0]
         input_messages = call_args[2]
-        # system prompt + last 3 user messages
-        assert len(input_messages) == 4
-        assert input_messages[1]["content"] == "message 3"
-        assert input_messages[3]["content"] == "message 5"
+        # system prompt + last CONTEXT_WINDOW (6) user messages
+        assert len(input_messages) == 7
+        assert input_messages[1]["content"] == "message 0"
+        assert input_messages[6]["content"] == "message 5"
 
     async def test_single_message_does_not_crash(self):
         agent = make_agent()

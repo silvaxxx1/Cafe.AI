@@ -1,4 +1,4 @@
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, TextInput } from 'react-native';
 import React, { useMemo } from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '@/constants/theme';
@@ -10,7 +10,11 @@ const getGreeting = (): string => {
   return 'Good evening ☕';
 };
 
-const SearchArea = () => {
+interface SearchAreaProps {
+  onSearch: (text: string) => void;
+}
+
+const SearchArea = ({ onSearch }: SearchAreaProps) => {
   const theme = useTheme();
   const greeting = useMemo(getGreeting, []);
 
@@ -27,6 +31,20 @@ const SearchArea = () => {
         {/* Page title */}
         <Text style={[styles.title, { color: theme.text }]}>{greeting}</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>What are you having today?</Text>
+
+        {/* Search input */}
+        <View style={[styles.searchRow, { backgroundColor: theme.inputBg, borderColor: theme.border }]}>
+          <Ionicons name="search-outline" size={16} color={theme.textFaint} />
+          <TextInput
+            onChangeText={onSearch}
+            placeholder="Search menu…"
+            placeholderTextColor={theme.textFaint}
+            style={[styles.searchInput, { color: theme.text }]}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+            accessibilityLabel="Search menu items"
+          />
+        </View>
       </View>
     </View>
   );
@@ -61,6 +79,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Sora-Regular',
     fontSize: 14,
     lineHeight: 20,
+    marginBottom: 16,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: 'Sora-Regular',
+    fontSize: 14,
+    padding: 0,
   },
 });
 

@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 import os
-from .utils import get_chatbot_response, get_chatbot_response_stream
+from .utils import get_chatbot_response, get_chatbot_response_stream, CONTEXT_WINDOW
 from openai import AsyncOpenAI
 from copy import deepcopy
 from dotenv import load_dotenv
@@ -70,7 +70,11 @@ class RecommendationAgent():
 
         return recommendations_df['product'].tolist()[:top_k]
 
-    async def recommendation_classification(self, messages):
+    async def recommendation_classification(self, messages, already_recommended=None):
+        avoid_str = ""
+        if already_recommended:
+            avoid_str = f"\n\nDo not recommend these items as they were already suggested: {', '.join(already_recommended)}"
+
         system_prompt = """ You are a helpful AI assistant for a coffee shop application which serves drinks and pastries. We have 3 types of recommendations:
 
         1. Apriori Recommendations: These are recommendations based on the user's order history. We recommend items that are frequently bought together with the items in the user's order.
@@ -90,9 +94,9 @@ class RecommendationAgent():
         "recommendation_type": "apriori" or "popular" or "popular by category". Pick one of those and only write the word.
         "parameters": This is a  python list. It's either a list of of items for apriori recommendations or a list of categories for popular by category recommendations. Leave it empty for popular recommendations. Make sure to use the exact strings from the list of items and categories above.
         }
-        """
+        """ + avoid_str
 
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
         chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages, json_mode=True)
         return self.postprocess_classfication(chatbot_output)
@@ -100,7 +104,13 @@ class RecommendationAgent():
     async def get_response(self, messages):
         messages = deepcopy(messages)
 
-        recommendation_classification = await self.recommendation_classification(messages)
+        already_recommended = []
+        for msg in reversed(messages):
+            if msg.get("memory", {}).get("agent") == "recommendation_agent":
+                already_recommended = msg["memory"].get("last_recommendations", [])
+                break
+
+        recommendation_classification = await self.recommendation_classification(messages, already_recommended)
         recommendation_type = recommendation_classification['recommendation_type']
         recommendations = []
         if recommendation_type == "apriori":
@@ -111,7 +121,11 @@ class RecommendationAgent():
             recommendations = self.get_popular_recommendation(recommendation_classification['parameters'])
 
         if recommendations == []:
-            return {"role": "assistant", "content": "Sorry, I can't help with that. Can I help you with your order?"}
+            return {
+                "role": "assistant",
+                "content": "Sorry, I can't help with that. Can I help you with your order?",
+                "memory": {"agent": "recommendation_agent", "last_recommendations": []}
+            }
 
         recommendations_str = ", ".join(recommendations)
 
@@ -129,10 +143,10 @@ class RecommendationAgent():
         """
 
         messages[-1]['content'] = prompt
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
-        chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages)
-        return self.postprocess(chatbot_output)
+        chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages, temperature=0.7)
+        return self.postprocess(chatbot_output, recommendations)
 
     async def get_recommendations_from_order(self, messages, order):
         products = [product['item'] for product in order]
@@ -153,7 +167,7 @@ class RecommendationAgent():
         """
 
         messages[-1]['content'] = prompt
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
         chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages)
         return self.postprocess(chatbot_output)
@@ -169,17 +183,23 @@ class RecommendationAgent():
 
         return {"recommendation_type": rec_type, "parameters": parameters}
 
-    def postprocess(self, output):
+    def postprocess(self, output, recommendations=None):
         return {
             "role": "assistant",
             "content": output,
-            "memory": {"agent": "recommendation_agent"}
+            "memory": {"agent": "recommendation_agent", "last_recommendations": recommendations or []}
         }
 
     async def get_stream_response(self, messages):
         messages = deepcopy(messages)
 
-        recommendation_classification = await self.recommendation_classification(messages)
+        already_recommended = []
+        for msg in reversed(messages):
+            if msg.get("memory", {}).get("agent") == "recommendation_agent":
+                already_recommended = msg["memory"].get("last_recommendations", [])
+                break
+
+        recommendation_classification = await self.recommendation_classification(messages, already_recommended)
         recommendation_type = recommendation_classification['recommendation_type']
         recommendations = []
         if recommendation_type == "apriori":
@@ -192,7 +212,7 @@ class RecommendationAgent():
         if not recommendations:
             content = "Sorry, I can't help with that. Can I help you with your order?"
             yield {"type": "token", "delta": content}
-            yield {"type": "done", "memory": {"agent": "recommendation_agent"}}
+            yield {"type": "done", "memory": {"agent": "recommendation_agent", "last_recommendations": []}}
             return
 
         recommendations_str = ", ".join(recommendations)
@@ -211,9 +231,9 @@ class RecommendationAgent():
         """
 
         messages[-1]['content'] = prompt
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
-        async for token in get_chatbot_response_stream(self.client, self.model_name, input_messages):
+        async for token in get_chatbot_response_stream(self.client, self.model_name, input_messages, temperature=0.7):
             yield {"type": "token", "delta": token}
 
-        yield {"type": "done", "memory": {"agent": "recommendation_agent"}}
+        yield {"type": "done", "memory": {"agent": "recommendation_agent", "last_recommendations": recommendations}}

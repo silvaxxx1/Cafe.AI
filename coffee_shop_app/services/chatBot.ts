@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { MessageInterface } from '@/types/types';
+import { MessageInterface, AgentMemory } from '@/types/types';
 import { API_KEY, API_URL } from '@/config/runpodConfigs';
 
 const BASE_URL = API_URL ? API_URL.replace(/\/chat$/, '') : '';
@@ -65,7 +65,7 @@ async function callChatBotAPI(messages: MessageInterface[]): Promise<MessageInte
 
 type StreamEvent =
     | { type: 'token'; delta: string }
-    | { type: 'done'; memory: any }
+    | { type: 'done'; memory: AgentMemory }
     | { type: 'error'; message: string };
 
 async function* callChatBotStreamAPI(messages: MessageInterface[], sessionId?: string): AsyncGenerator<StreamEvent> {

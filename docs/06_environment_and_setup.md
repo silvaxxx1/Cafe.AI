@@ -58,7 +58,7 @@ All frontend env vars must be prefixed with `EXPO_PUBLIC_` to be accessible in J
 | `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase project API key |
 | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | e.g., `your-project.firebaseapp.com` |
 | `EXPO_PUBLIC_FIREBASE_DATABASE_URL` | Realtime DB URL (triggers initialization) |
-| `EXPO_PUBLIC_FIREBASE_PROHECT_Id` | **Note the typo: "PROHECT"** — matches the config file |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID |
 | `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase storage bucket |
 | `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | FCM sender ID |
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase app ID |
@@ -66,7 +66,7 @@ All frontend env vars must be prefixed with `EXPO_PUBLIC_` to be accessible in J
 
 If `EXPO_PUBLIC_FIREBASE_DATABASE_URL` is blank, Firebase is never initialized and the menu shows empty (no crash).
 
-**Known typo:** `EXPO_PUBLIC_FIREBASE_PROHECT_Id` — "PROJECT" is misspelled as "PROHECT" in both `firebaseConfig.ts` and `.env_example.txt`. They match each other, so it works. Do not fix one without fixing the other.
+All Firebase env vars use the correct spelling. `EXPO_PUBLIC_FIREBASE_PROJECT_ID` is correct in `firebaseConfig.ts`, `.env_example.txt`, and `.env`.
 
 ---
 
@@ -144,7 +144,6 @@ npm run android      # Requires Android emulator or device + Expo Go
 pandas>=2.1.0            # popularity_recommendation.csv loading
 python-dotenv==1.0.1     # .env file loading
 openai==1.50.2           # LLM + embedding calls (OpenAI-compatible SDK)
-runpod==1.7.1            # serverless handler (production only, used in main.py)
 pinecone==5.3.1          # vector DB client (optional, DetailsAgent)
 httpx==0.27.2            # HTTP client — MUST be pinned, newer versions break openai async client
 fastapi==0.115.0         # local HTTP server
@@ -153,7 +152,7 @@ sentence-transformers    # local embeddings for RAG (DetailsAgent)
 structlog>=25.0.0        # structured JSON logging — observability
 ```
 
-**Not in requirements but used locally:** None — all imports are in requirements.txt.
+**Note:** `runpod` is NOT in local requirements. `main.py` (production only) imports it — the RunPod Docker environment provides it. Never needed locally.
 
 **Missing from requirements:** `pydantic` (used by FastAPI) is installed transitively. No explicit pin.
 

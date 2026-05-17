@@ -1,5 +1,9 @@
 import time
 import structlog
+
+# Number of recent messages sent to guard/classification agents.
+# 6 covers ~3 back-and-forth turns — enough context without unbounded token growth.
+CONTEXT_WINDOW = 6
 from collections.abc import AsyncGenerator
 from contextvars import ContextVar
 from openai import AsyncOpenAI

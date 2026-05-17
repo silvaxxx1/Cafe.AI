@@ -164,6 +164,20 @@ class TestGetResponse:
         assert "content" in result
         assert result["content"] != ""
 
+    async def test_empty_recommendations_always_has_memory_key(self):
+        """Fallback path must include memory so downstream code never KeyErrors."""
+        agent = make_agent()
+        classification_output = json.dumps({
+            "recommendation_type": "apriori",
+            "parameters": ["NonExistentItem99"]
+        })
+        with patch("agents.recommendation_agent.get_chatbot_response", AsyncMock(return_value=classification_output)):
+            result = await agent.get_response([{"role": "user", "content": "What pairs with NonExistentItem99?"}])
+
+        assert "memory" in result
+        assert result["memory"]["agent"] == "recommendation_agent"
+        assert result["memory"]["last_recommendations"] == []
+
     async def test_successful_response_shape(self):
         agent = make_agent()
         # First call → classification (popular), second call → final response text
@@ -176,3 +190,116 @@ class TestGetResponse:
 
         assert result["role"] == "assistant"
         assert result["memory"]["agent"] == "recommendation_agent"
+
+    async def test_last_recommendations_stored_in_memory(self):
+        """Resolved recommendation list must be stored in memory for next-turn deduplication."""
+        agent = make_agent()
+        responses = iter([
+            json.dumps({"recommendation_type": "popular", "parameters": []}),
+            "Here are some popular items!"
+        ])
+        with patch("agents.recommendation_agent.get_chatbot_response", AsyncMock(side_effect=responses)):
+            result = await agent.get_response([{"role": "user", "content": "What's popular?"}])
+
+        assert "last_recommendations" in result["memory"]
+        assert isinstance(result["memory"]["last_recommendations"], list)
+        assert len(result["memory"]["last_recommendations"]) > 0
+
+    async def test_already_recommended_items_injected_into_classification_prompt(self):
+        """If the prior turn stored recommendations, they must appear in the classification system prompt."""
+        agent = make_agent()
+
+        messages = [
+            {"role": "user", "content": "What do you recommend?"},
+            {
+                "role": "assistant",
+                "content": "I suggest Cappuccino!",
+                "memory": {"agent": "recommendation_agent", "last_recommendations": ["Cappuccino", "Latte"]}
+            },
+            {"role": "user", "content": "What else?"},
+        ]
+
+        captured_messages = []
+
+        async def capture_call(client, model, msgs, **kwargs):
+            captured_messages.append(msgs)
+            return json.dumps({"recommendation_type": "popular", "parameters": []})
+
+        with patch("agents.recommendation_agent.get_chatbot_response", AsyncMock(side_effect=capture_call)):
+            await agent.recommendation_classification(
+                messages,
+                already_recommended=["Cappuccino", "Latte"]
+            )
+
+        # The system prompt (first message in first call) must mention the already-suggested items
+        system_content = captured_messages[0][0]["content"]
+        assert "Cappuccino" in system_content
+        assert "Latte" in system_content
+
+    async def test_turn_memory_prevents_repeat_on_second_call(self):
+        """get_response reads last_recommendations from history and passes it to classification."""
+        agent = make_agent()
+
+        messages = [
+            {"role": "user", "content": "Recommend something"},
+            {
+                "role": "assistant",
+                "content": "Try a Cappuccino!",
+                "memory": {"agent": "recommendation_agent", "last_recommendations": ["Cappuccino"]}
+            },
+            {"role": "user", "content": "What else?"},
+        ]
+
+        captured_system_prompts = []
+
+        async def spy_call(client, model, msgs, **kwargs):
+            captured_system_prompts.append(msgs[0]["content"])
+            return json.dumps({"recommendation_type": "popular", "parameters": []})
+
+        with patch("agents.recommendation_agent.get_chatbot_response", AsyncMock(side_effect=spy_call)):
+            await agent.recommendation_classification(messages, already_recommended=["Cappuccino"])
+
+        assert "Cappuccino" in captured_system_prompts[0]
+
+
+class TestGetStreamResponse:
+    async def test_stream_stores_last_recommendations_in_done_event(self):
+        """done event must carry last_recommendations so the frontend can store them."""
+        agent = make_agent()
+
+        async def mock_stream(client, model, msgs, **kwargs):
+            yield "Great choice! "
+            yield "Try the Latte."
+
+        responses = iter([
+            json.dumps({"recommendation_type": "popular", "parameters": []})
+        ])
+
+        with patch("agents.recommendation_agent.get_chatbot_response", AsyncMock(side_effect=responses)), \
+             patch("agents.recommendation_agent.get_chatbot_response_stream", mock_stream):
+            events = []
+            async for event in agent.get_stream_response([{"role": "user", "content": "What's popular?"}]):
+                events.append(event)
+
+        done_event = events[-1]
+        assert done_event["type"] == "done"
+        assert "last_recommendations" in done_event["memory"]
+        assert isinstance(done_event["memory"]["last_recommendations"], list)
+        assert len(done_event["memory"]["last_recommendations"]) > 0
+
+    async def test_stream_empty_recommendations_has_memory_key(self):
+        """Empty-list fallback in stream path must also carry memory."""
+        agent = make_agent()
+        classification_output = json.dumps({
+            "recommendation_type": "apriori",
+            "parameters": ["NonExistentItem99"]
+        })
+        with patch("agents.recommendation_agent.get_chatbot_response", AsyncMock(return_value=classification_output)):
+            events = []
+            async for event in agent.get_stream_response([{"role": "user", "content": "Recommend NonExistentItem99 pairings"}]):
+                events.append(event)
+
+        done_event = events[-1]
+        assert done_event["type"] == "done"
+        assert done_event["memory"]["agent"] == "recommendation_agent"
+        assert done_event["memory"]["last_recommendations"] == []

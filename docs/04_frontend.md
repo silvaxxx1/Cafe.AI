@@ -101,12 +101,13 @@ No logic, no state.
 - `productCategories: ProductCategory[]` — `[{ id: string, selected: bool }]`
 - `selectedCategory: string` — initially `'All'`
 
-**Two `useEffect` hooks:**
+**Three `useEffect` hooks:**
 1. On mount: `fetchProducts()` → build category list → set both `products` and `shownProducts`
-2. On `selectedCategory` change: filter `products` → update `shownProducts` and category `selected` flags
+2. On `selectedCategory` change: update category chip `selected` flags
+3. On `selectedCategory`, `searchQuery`, or `products` change: apply both filters to `shownProducts`
 
 **Layout:** `FlatList` with dynamic `numColumns` (2 on mobile, 3 at 600px+, 4 at 900px+) via `useGridColumns()`. Uses `key={numColumns}` to force remount on column change (React Native requirement). `ListHeaderComponent` contains:
-- `SearchArea` (decorative — no search logic implemented)
+- `SearchArea` (live search — filters products by name as you type, combined with category filter)
 - `Banner` (static promo image)
 - Horizontal category pill filter
 
@@ -130,13 +131,11 @@ Navigation to details: `router.push({ pathname: '/details', params: { ...product
 1. Trim input; skip if empty
 2. Append user message to history
 3. Clear input field
-4. `setIsTyping(true)`
-5. `await callChatBotAPI(allMessages)`
-6. `setIsTyping(false)`
-7. Append response to messages
-8. If `response.memory.order` exists: `emptyCart()` then re-add each item
+4. Stream via `callChatBotStreamAPI` — tokens update the assistant bubble in place
+5. On `done` event: attach `memory` to the final message
+6. If `memory.order` exists: `syncCartFromOrder(memory.order)`
 
-**Why `emptyCart()` before re-adding:** The LLM returns the **complete current order** every time, not a delta. So the cart must be wiped and rebuilt from the full order on each turn.
+**Cart sync (`syncCartFromOrder`):** The LLM returns the complete current order on every turn. `syncCartFromOrder` updates only the LLM-managed cart slots — manually added items from the browse screen are preserved. Items the user removed via chat are deleted from the cart.
 
 **Layout:**
 - `PageHeader` at top (title "Chat Bot")
@@ -151,17 +150,15 @@ Navigation to details: `router.push({ pathname: '/details', params: { ...product
 
 **Total calculation:**
 ```typescript
-products.reduce((total, product) => {
-    const quantity = cartItems[product.name] || 0;
-    return total + product.price * quantity;
-}, 0);
+const DELIVERY_FEE = 1.00;
+products.reduce((total, p) => total + p.price * (cartItems[p.name.trim().toLowerCase()] || 0), 0);
 ```
 
-Only products with `quantity > 0` (from cartItems) are shown in the list.
+Cart keys are normalised (lowercase, trimmed) — lookup uses the same normalisation.
 
 **Checkout:** `orderNow()` empties cart, shows Toast, navigates to `/thankyou`. No actual payment or API call.
 
-**Price display in footer:** `$ {totalPrice + 1}` — the `+1` is a hardcoded delivery fee. Not dynamic.
+**Price display in footer:** `totalPrice + DELIVERY_FEE` — named constant, not a magic number.
 
 ### details.tsx — Product Detail
 
@@ -193,13 +190,14 @@ Animates "Typing..." with cycling dots using `setInterval(500ms)`. Shown inside 
 ### CartContext
 
 ```typescript
-type CartItems = { [productName: string]: number }
+type CartItems = { [normalisedName: string]: number }  // keys are lowercase + trimmed
 ```
 
-Three methods:
-- `addToCart(name, qty)` — accumulates
-- `SetQuantityCart(name, delta)` — increments/decrements, min 0
-- `emptyCart()` — resets to `{}`
+Four methods:
+- `addToCart(name, qty)` — normalises key, accumulates quantity
+- `SetQuantityCart(name, delta)` — normalises key, increments/decrements, min 0
+- `emptyCart()` — resets to `{}`, clears LLM tracking state
+- `syncCartFromOrder(order)` — merges LLM order without wiping manually-added items; removes items dropped from the LLM order; preserves items not mentioned by the LLM
 
 Context throws if used outside `CartProvider`. The `useCart()` hook enforces this.
 
@@ -209,7 +207,7 @@ Fully static component — hardcoded "Buy one get one FREE" promo text with `ass
 
 ### SearchArea
 
-Renders a search bar UI. **No search logic implemented.** It's a visual placeholder.
+Accepts an `onSearch: (text: string) => void` prop. Renders a greeting header and a live `TextInput` search bar. Calls `onSearch` on every keystroke — `home.tsx` passes `setSearchQuery` to filter the product list in real time.
 
 ---
 
@@ -259,29 +257,24 @@ Note: `EXPO_PUBLIC_FIREBASE_PROHECT_Id` — the env var name has a typo ("PROHEC
 ## TypeScript Types (`types/types.ts`)
 
 ```typescript
-interface Product {
-    id: string;
-    category: string;
-    description: string;
-    image_url: string;
-    name: string;
-    price: number;
-    rating: number;
-}
+interface Product { id, category, description, image_url, name, price, rating }
+interface ProductCategory { id: string; selected: boolean }
 
-interface ProductCategory {
-    id: string;
-    selected: boolean;
-}
+// Agent memory union — TypeScript enforces correct field access per agent
+type AgentMemory =
+  | GuardMemory           // { agent: 'guard_agent'; guard_decision: 'allowed' | 'not allowed' }
+  | ClassificationMemory  // { agent: 'classification_agent'; classification_decision: ... }
+  | OrderMemory           // { agent: 'order_taking_agent'; step number, order, asked_recommendation_before }
+  | RecommendationMemory  // { agent: 'recommendation_agent'; last_recommendations: string[] }
 
 interface MessageInterface {
-    role: string;          // "user" | "assistant" — no literal union enforced
+    role: string;
     content: string;
-    memory?: any;          // untyped — carries agent-specific state
+    memory?: AgentMemory;
 }
 ```
 
-`memory` is typed as `any`. This is the main typing gap — the structure varies per agent and is only documented in code comments and prompts.
+`chatBot.ts` `StreamEvent` and `chatRoom.tsx` local variable both use `AgentMemory`.
 
 ---
 

@@ -26,37 +26,21 @@ The `OrderTakingAgent` recovers order state by walking backwards through `messag
 
 **Impact:** Fragile; depends on the frontend always sending the complete message array.
 
-### 5. `double_check_json_output` Is Dead Code
+### ~~5. `double_check_json_output` Is Dead Code~~ ✅ Fixed
 
-All agents now use `json_mode=True` which guarantees valid JSON directly from the LLM. `double_check_json_output` still exists in `agents/utils.py` but is never called anywhere. Safe to delete — keeping it is harmless but misleading.
+Function has been removed from `agents/utils.py`.
 
-**File:** `agents/utils.py:65`
+### ~~6. Only Last 3 Messages Sent to Guard and Classification~~ ✅ Fixed
 
-### 6. Only Last 3 Messages Sent to Guard and Classification
+`CONTEXT_WINDOW = 6` constant defined in `agents/utils.py` and used by all three routing agents (guard, classification, `recommendation_classification`). Guard and classification now see the last 6 messages (~3 back-and-forth turns).
 
-```python
-input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
-```
+### ~~7. `temperature=0` for All Agents~~ ✅ Fixed (Recommendation only)
 
-Guard and Classification agents only see the last 3 messages. For very long conversations, they lose earlier context. For classification this is usually fine (intent is in recent messages), but for guard it means a user who was blocked earlier could retry after 3 turns.
+`RecommendationAgent`'s natural-language response call now uses `temperature=0.7` — phrasing varies across sessions while product selection stays deterministic. Guard and classification remain at `temperature=0`.
 
-### 7. `temperature=0` for All Agents
+### ~~8. `RunPod` Package in Requirements for Local Dev~~ ✅ Fixed
 
-```python
-# utils.py:7
-response = client.chat.completions.create(
-    ...
-    temperature=0,
-    top_p=0.8,
-    ...
-)
-```
-
-All agents use deterministic generation. This is correct for guard and classification (you want consistent routing). For the recommendation agent's final response ("Here are my recommendations..."), it produces identical phrasing every time, which can feel robotic.
-
-### 8. `RunPod` Package in Requirements for Local Dev
-
-`runpod==1.7.1` is in `requirements.txt` even though it's only used in `main.py` (production). Every local `uv pip install -r requirements.txt` installs an unnecessary package.
+`runpod==1.7.1` removed from `requirements.txt`. `main.py` still imports it (production RunPod environment has it installed). Local dev is unaffected.
 
 ### ~~9. No Input Validation on `/chat`~~ ✅ Fixed
 
@@ -74,80 +58,45 @@ All agents use deterministic generation. This is correct for guard and classific
 
 Server now checks for `RUNPOD_TOKEN`, `RUNPOD_CHATBOT_URL`, and `MODEL_NAME` at startup. If any are missing, it prints a clear error and exits before binding the port.
 
-### 11c. Recommendation Agent: Empty Result Handling
+### ~~11c. Recommendation Agent: Empty Result Handling~~ ✅ Fixed
 
-```python
-if recommendations == []:
-    return {"role": "assistant", "content": "Sorry, I can't help with that..."}
-```
-
-This response has no `memory` key. The frontend's `response.memory?.order` check handles `undefined` gracefully, but any code that unconditionally reads `memory.agent` will throw.
+Both `get_response()` and `get_stream_response()` now include a `memory` key on the empty-list fallback path, consistent with all other code paths.
 
 ---
 
 ## Frontend
 
-### 12. Cart Key = Product Name String
+### ~~12. Cart Key = Product Name String~~ ✅ Fixed
 
-Cart items are keyed by product name (`{ "Cappuccino": 2 }`). If the LLM returns `"cappuccino"` (lowercase) or `"Cappuccino "` (trailing space), `addToCart` creates a new key and the cart shows a duplicate entry or wrong quantity.
+`CartContext` now normalises all keys on write via `normaliseKey()` (`.trim().toLowerCase()`). `"Cappuccino"`, `"cappuccino"`, and `"Cappuccino "` all resolve to the same cart slot. Read sites (`CartProductList.tsx`, `order.tsx`) also normalise on lookup.
 
-**File:** `components/CartContext.tsx:18`
+### ~~13. `emptyCart()` Before Re-Adding From Order~~ ✅ Fixed
 
-**Dependency:** The LLM must return item names that exactly match Firebase product names.
-
-### 13. `emptyCart()` Before Re-Adding From Order
-
-Every time the order agent responds, the frontend wipes the cart and rebuilds it from the LLM's order:
-
-**File:** `app/(tabs)/chatRoom.tsx:38-42`
-```typescript
-emptyCart()
-responseMessage.memory.order.forEach((item: any) => {
-    addToCart(item.item, item.quantity)
-})
-```
-
-This means **manual cart additions (from home.tsx or details.tsx) are wiped** the moment the order agent responds. Cart additions from the browse screen and chat orders do not co-exist cleanly.
+`syncCartFromOrder(order)` replaces the `emptyCart()` + rebuild pattern. It tracks which keys came from LLM responses and only updates those — items added manually from the browse screen survive agent responses. Items dropped from the LLM order are removed; items not mentioned are untouched.
 
 ### ~~14. Order Screen Re-Fetches Firebase~~ ✅ Fixed
 
 `productService.ts` now has a module-level cache with in-flight deduplication. Both `home.tsx` and `order.tsx` call `fetchProducts()` but only the first call hits Firebase — the second returns the cached result immediately.
 
-### 15. Delivery Fee is Hardcoded `+1`
+### ~~15. Delivery Fee is Hardcoded `+1`~~ ✅ Fixed
 
-```typescript
-// order.tsx:69
-<Text>$ {totalPrice === 0 ? 0 : totalPrice + 1}</Text>
-```
+`const DELIVERY_FEE = 1.00` defined at the top of `order.tsx`. All three JSX occurrences reference the constant.
 
-$1 delivery fee hardcoded in JSX. Not a constant, not configurable.
+### ~~16. `SearchArea` Component Does Nothing~~ ✅ Fixed
 
-### 16. `SearchArea` Component Does Nothing
-
-`components/SearchArea.tsx` renders a search bar UI but has no search logic. The search input is not connected to any filter. It's visual only.
+`SearchArea` now accepts an `onSearch` callback and renders a real `TextInput`. `home.tsx` passes `setSearchQuery` and filters `shownProducts` by both category and search query in real time.
 
 ### 17. `SizesSection` Component is Static
 
 `components/SizesSection.tsx` renders size options (S/M/L) but doesn't affect the cart or price. Size selection is decorative only.
 
-### 18. Firebase Typo in Env Var Name
+### ~~18. Firebase Typo in Env Var Name~~ ✅ Fixed
 
-```typescript
-// config/firebaseConfig.ts
-projectId: process.env.EXPO_PUBLIC_FIREBASE_PROHECT_Id
-```
+`EXPO_PUBLIC_FIREBASE_PROHECT_Id` → `EXPO_PUBLIC_FIREBASE_PROJECT_ID` corrected simultaneously in `firebaseConfig.ts`, `.env_example.txt`, and `.env`.
 
-`PROHECT` instead of `PROJECT`. This typo is in both the config and the `.env_example.txt`, so they match. **Do not fix one without fixing the other.**
+### ~~19. `memory` Typed as `any`~~ ✅ Fixed
 
-### 19. `memory` Typed as `any`
-
-```typescript
-interface MessageInterface {
-    memory?: any;   // no structure enforced
-}
-```
-
-The memory shape varies by agent and is accessed with optional chaining (`response.memory?.order`). TypeScript provides no protection against accessing wrong fields.
+`types/types.ts` now exports a proper `AgentMemory` union type covering all four agent shapes (`GuardMemory`, `ClassificationMemory`, `OrderMemory`, `RecommendationMemory`). `MessageInterface.memory`, `chatRoom.tsx` local variable, and `chatBot.ts` `StreamEvent` all use `AgentMemory`.
 
 ### ~~20. No Error Boundary~~ ✅ Fixed
 
@@ -159,7 +108,9 @@ The memory shape varies by agent and is accessed with optional chaining (`respon
 
 ### ~~21. No Tests~~ ✅ Fixed
 
-Backend now has 120 passing tests across all agents, the server (including streaming and session endpoints), and the eval runners (`pytest tests/ -v`). Uses `AsyncMock` — no API key needed to run. Frontend tests remain unimplemented (tracked in V2 Stage 5).
+Backend: 126 passing pytest tests across all agents, server, streaming, session, and eval runners (`make test`). No API key needed.
+
+Frontend: 18 passing Jest tests — `CartContext` (10), `MessageItem` (4), `productService` (4). Run with `make test-frontend`. `make test-all` runs both suites in sequence.
 
 ### ~~22. No Observability~~ ✅ Fixed
 
@@ -169,27 +120,13 @@ Backend now has 120 passing tests across all agents, the server (including strea
 
 Eval datasets in `tests/eval_data/` (25 guard cases, 21 classification cases, 9 recommendation cases). Runners in `tests/evals/` hit the real LLM and report per-case PASS/FAIL with an 80% threshold. 29 unit tests cover data integrity, runner scoring, and exit codes. Run with `make evals`.
 
-### 24. `RecommendationAgent` Has No Memory
+### ~~24. `RecommendationAgent` Has No Memory~~ ✅ Fixed
 
-```python
-def postprocess(self, output):
-    return {
-        "role": "assistant",
-        "content": output,
-        "memory": {"agent": "recommendation_agent"}   # no state
-    }
-```
+`postprocess()` now stores the resolved recommendation list in `memory.last_recommendations`. On the next turn, `get_response()` and `get_stream_response()` walk back through message history, find the last recommendation memory, and inject `already_recommended` items into the `recommendation_classification` system prompt — preventing the same items from being suggested again.
 
-The recommendation agent carries no state between turns. If the user asks "what else?" after a recommendation, the agent doesn't know what it recommended before. Classification will re-route to recommendation_agent, which starts fresh.
+### ~~25. Guard Uses Last 3 Messages, Not Full History~~ ✅ Fixed
 
-### 25. Guard Uses Last 3 Messages, Not Full History
-
-A harmful user could:
-1. Ask something off-topic (blocked)
-2. Ask 3 legitimate questions
-3. Ask the off-topic question again (now outside the 3-message window)
-
-The guard would not recall the earlier block. Not a security issue for a coffee shop, but worth understanding.
+See Issue 6. Guard now uses `CONTEXT_WINDOW = 6`.
 
 ---
 

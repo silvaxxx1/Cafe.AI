@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 import json
 from copy import deepcopy
-from .utils import get_chatbot_response
+from .utils import get_chatbot_response, CONTEXT_WINDOW
 from openai import AsyncOpenAI
 load_dotenv()
 
@@ -32,7 +32,7 @@ class ClassificationAgent():
             }
             """
 
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
         chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages, json_mode=True)
         output = self.postprocess(chatbot_output)

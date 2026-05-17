@@ -12,6 +12,8 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/constants/theme';
 
+const DELIVERY_FEE = 1.00;
+
 const Order = () => {
   const { cartItems, SetQuantityCart, emptyCart } = useCart();
   const theme = useTheme();
@@ -22,7 +24,7 @@ const Order = () => {
   const [retryCount, setRetryCount] = useState(0);
 
   const totalPrice = useMemo(
-    () => products.reduce((total, p) => total + p.price * (cartItems[p.name] || 0), 0),
+    () => products.reduce((total, p) => total + p.price * (cartItems[p.name.trim().toLowerCase()] || 0), 0),
     [products, cartItems]
   );
 
@@ -117,12 +119,12 @@ const Order = () => {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: theme.textMuted }]}>Delivery</Text>
-                <Text style={[styles.summaryValue, { color: theme.text }]}>$1.00</Text>
+                <Text style={[styles.summaryValue, { color: theme.text }]}>${DELIVERY_FEE.toFixed(2)}</Text>
               </View>
               <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
               <View style={styles.summaryRow}>
                 <Text style={[styles.totalLabel, { color: theme.text }]}>Total</Text>
-                <Text style={[styles.totalValue, { color: theme.accent }]}>${(totalPrice + 1).toFixed(2)}</Text>
+                <Text style={[styles.totalValue, { color: theme.accent }]}>${(totalPrice + DELIVERY_FEE).toFixed(2)}</Text>
               </View>
             </View>
           )}
@@ -143,11 +145,11 @@ const Order = () => {
             onPress={orderNow}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel={totalPrice === 0 ? 'Add items to order' : `Place order for $${(totalPrice + 1).toFixed(2)}`}
+            accessibilityLabel={totalPrice === 0 ? 'Add items to order' : `Place order for $${(totalPrice + DELIVERY_FEE).toFixed(2)}`}
             accessibilityState={{ disabled: totalPrice === 0 }}
           >
             <Text style={[styles.orderBtnText, { color: totalPrice === 0 ? theme.textFaint : theme.onAccent }]}>
-              {totalPrice === 0 ? 'Add items to order' : `Place order · $${(totalPrice + 1).toFixed(2)}`}
+              {totalPrice === 0 ? 'Add items to order' : `Place order · $${(totalPrice + DELIVERY_FEE).toFixed(2)}`}
             </Text>
           </TouchableOpacity>
 

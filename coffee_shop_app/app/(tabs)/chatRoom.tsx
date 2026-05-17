@@ -6,13 +6,14 @@ import { GestureHandlerRootView, TextInput } from 'react-native-gesture-handler'
 import { Ionicons } from '@expo/vector-icons';
 import { callChatBotStreamAPI, clearSession, getSessionId, loadSession } from '@/services/chatBot';
 import { useCart } from '@/components/CartContext';
+import { AgentMemory } from '@/types/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '@/constants/theme';
 import { webPointer } from '@/constants/responsive';
 
 const ChatRoom = () => {
-  const { addToCart, emptyCart } = useCart();
+  const { syncCartFromOrder } = useCart();
   const theme = useTheme();
 
   const [messages, setMessages] = useState<MessageInterface[]>([]);
@@ -44,7 +45,7 @@ const ChatRoom = () => {
       setIsTyping(false);
 
       let fullContent = '';
-      let memory: any = undefined;
+      let memory: AgentMemory | undefined = undefined;
 
       for await (const event of callChatBotStreamAPI(inputMessages, sessionIdRef.current)) {
         if (event.type === 'token') {
@@ -71,8 +72,7 @@ const ChatRoom = () => {
       }
 
       if (memory?.order) {
-        emptyCart();
-        memory.order.forEach((item: any) => addToCart(item.item, item.quantity));
+        syncCartFromOrder(memory.order);
       }
     } catch (err: any) {
       setIsTyping(false);

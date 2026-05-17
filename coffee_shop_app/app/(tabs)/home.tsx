@@ -24,23 +24,25 @@ const Home = () => {
   const [shownProducts, setShownProducts] = useState<Product[]>([]);
   const [productCategories, setProductCatgories] = useState<ProductCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Keep category chip selected state in sync
   useEffect(() => {
-    const uniqueCategories = productCategories.map((category) => ({
-      id: category.id,
-      selected: selectedCategory === category.id,
-    }));
-    setProductCatgories(uniqueCategories);
-
-    if (selectedCategory === 'All') {
-      setShownProducts(products);
-    } else {
-      setShownProducts(products.filter((p) => p.category === selectedCategory));
-    }
+    setProductCatgories((prev) => prev.map((c) => ({ ...c, selected: c.id === selectedCategory })));
   }, [selectedCategory]);
+
+  // Filter products by active category and search query
+  useEffect(() => {
+    let filtered = selectedCategory === 'All' ? products : products.filter((p) => p.category === selectedCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((p) => p.name.toLowerCase().includes(q));
+    }
+    setShownProducts(filtered);
+  }, [selectedCategory, searchQuery, products]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -116,7 +118,7 @@ const Home = () => {
 
   const renderHeader = useCallback(() => (
     <View>
-      <SearchArea />
+      <SearchArea onSearch={setSearchQuery} />
       <Banner />
 
       <View style={[styles.categoryRow, { backgroundColor: theme.bg }]}>
@@ -158,7 +160,7 @@ const Home = () => {
         </Text>
       </View>
     </View>
-  ), [productCategories, selectedCategory, shownProducts.length, theme]);
+  ), [productCategories, selectedCategory, shownProducts.length, theme, setSearchQuery]);
 
   if (loading) {
     return (
