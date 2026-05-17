@@ -137,6 +137,6 @@ See Issue 6. Guard now uses `CONTEXT_WINDOW = 6`.
 | `RUNPOD_TOKEN` | All LLM calls fail with 401; server crashes on first request |
 | `RUNPOD_CHATBOT_URL` | LLM client defaults to OpenAI API; requests fail unless you have an OpenAI key |
 | `MODEL_NAME` | `None` passed as model name; LLM API returns 400 |
-| `PINECONE_API_KEY` | DetailsAgent disabled (graceful) — embeddings are local, no embedding URL needed |
+| `CHROMA_DB_PATH` absent / `api/chroma_db/` not built | DetailsAgent disabled (graceful) — run `build_index.py` once to enable RAG |
 | `EXPO_PUBLIC_RUNPOD_API_URL` | `API_URL` is `undefined`; axios throws on send |
 | `EXPO_PUBLIC_FIREBASE_DATABASE_URL` | Firebase not initialized; empty product list (graceful) |

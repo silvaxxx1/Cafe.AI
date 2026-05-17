@@ -15,7 +15,7 @@ Transaction history (CSV)
     │       → products uploaded to Firebase Realtime DB (read by frontend)
     │
     └── build_vector_database.ipynb
-            → product descriptions embedded → Pinecone index (read by DetailsAgent)
+            → product descriptions embedded → ChromaDB index on disk (read by DetailsAgent)
 ```
 
 Notebooks are one-time setup scripts, not part of the live server.
@@ -106,16 +106,17 @@ Pre-computed market basket association rules.
 - Product name, category, description, image URL, price, rating
 - Used by `productService.ts` on every app load
 
-### `build_vector_database.ipynb`
+### `build_index.py` (replaces `build_vector_database.ipynb`)
 
-**Purpose:** Embed product descriptions and upload vectors to Pinecone for RAG.
+**Purpose:** Embed product descriptions and write a local ChromaDB index for RAG.
 
 **Flow:**
-1. Load product data (descriptions, FAQs, or menu details)
-2. Split into chunks
-3. Embed each chunk via an embedding model (Ollama `nomic-embed-text` or RunPod endpoint)
-4. Upsert into Pinecone index, namespace `"ns1"`, with `text` metadata field
-5. `DetailsAgent` queries this at runtime with `top_k=2`
+1. Load product data from `products/products.jsonl` + `fero_cafe_about_us.txt` + `menu_items_text.txt`
+2. Embed each document via `sentence-transformers/all-MiniLM-L6-v2` (runs locally)
+3. Write to `api/chroma_db/` via ChromaDB `PersistentClient` — no upload, no API key
+4. `DetailsAgent` queries this at runtime with `n_results=2`
+
+**Run once:** `cd python_code && python build_index.py` — takes ~30 seconds.
 
 ### `prompt_engineering_tutorial.ipynb`
 
@@ -144,32 +145,28 @@ If `EXPO_PUBLIC_FIREBASE_DATABASE_URL` is not set, `fireBaseDB` is `null`, and `
 
 ---
 
-## Pinecone Vector Database
+## ChromaDB Vector Database
 
 **Used for:** DetailsAgent RAG — semantic search over product/shop descriptions.
 
-**Access pattern:** Query-only at runtime. Index built once via `build_vector_database.ipynb`.
+**Access pattern:** Query-only at runtime. Index built once via `python_code/build_index.py`.
 
 **Query:**
 ```python
-index.query(
-    namespace="ns1",
-    vector=embedding,
-    top_k=2,
-    include_values=False,
-    include_metadata=True
-)
+collection.query(query_embeddings=[embedding], n_results=2)
+# returns: {"documents": [["chunk1 text", "chunk2 text"]]}
 ```
 
-Returns 2 nearest chunks. Their `metadata["text"]` fields are joined and injected into the LLM prompt as context.
+Returns 2 nearest document strings, joined and injected into the LLM prompt as context.
 
 **Initialization guard:**
 ```python
-pinecone_key  = os.getenv("PINECONE_API_KEY")
-self.rag_enabled = bool(pinecone_key)
+chroma_path = os.getenv("CHROMA_DB_PATH", "api/chroma_db")
+self.rag_enabled = os.path.isdir(chroma_path)
+# → tries to load collection; gracefully disables on failure
 ```
 
-Embeddings are generated locally using `sentence-transformers/all-MiniLM-L6-v2` — no external embedding URL needed. If `PINECONE_API_KEY` is missing, `rag_enabled = False` and `get_response()` returns a fallback message immediately.
+Embeddings are generated locally using `sentence-transformers/all-MiniLM-L6-v2` — no external API needed. If `api/chroma_db/` is absent, `rag_enabled = False` and `get_response()` returns a fallback message immediately.
 
 ---
 

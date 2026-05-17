@@ -33,7 +33,7 @@ Cafe.AI is a full-stack AI-powered coffee shop assistant. A customer opens a mob
 │       │                                                         │
 │       ├── ClassificationAgent (routes to one of 3 agents)       │
 │       │                                                         │
-│       ├── DetailsAgent        (RAG → Pinecone → LLM)            │
+│       ├── DetailsAgent        (RAG → ChromaDB local → LLM)      │
 │       ├── OrderTakingAgent    (multi-turn order collection)     │
 │       └── RecommendationAgent (apriori / popularity ranking)   │
 │                                                                 │
@@ -42,8 +42,8 @@ Cafe.AI is a full-stack AI-powered coffee shop assistant. A customer opens a mob
                                │
           ┌────────────────────┼────────────────────┐
           ▼                    ▼                    ▼
-     Groq API           RunPod LLM           Pinecone
-  (local dev)          (production)       (RAG, optional)
+     Groq API           RunPod LLM         ChromaDB
+  (local dev)          (production)    (RAG, local disk)
 ```
 
 ---
@@ -64,7 +64,7 @@ AgentController → agents → Groq API (llama-3.3-70b-versatile, free)
 
 - No RunPod account needed
 - Groq free tier covers all development
-- `PINECONE_API_KEY` left blank → DetailsAgent gracefully disabled (embeddings are local, no embedding URL needed)
+- `api/chroma_db/` absent → DetailsAgent gracefully disabled. Run `python_code/build_index.py` once to enable RAG (no API key needed).
 
 ### Production (RunPod Serverless)
 
@@ -110,7 +110,7 @@ The `memory` field is the only state mechanism. There is no database or session 
 | All agents use OpenAI SDK with configurable `base_url` | Provider-agnostic; swap Groq ↔ RunPod ↔ OpenAI in `.env` |
 | `AgentProtocol` typed as a Protocol (structural typing) | Agents don't need to inherit a base class; duck-typed |
 | State embedded in message `memory` field | No external DB; simplifies local dev significantly |
-| RAG gracefully disabled when env vars absent | App runs fully without Pinecone; reduces setup friction |
+| RAG gracefully disabled when index absent | App runs fully without ChromaDB; one `build_index.py` run enables it |
 | `json_mode=True` on all structured agents | Guarantees valid JSON from LLM; no second repair call needed |
 | `local_server.py` mirrors RunPod response format | Frontend code doesn't branch on environment |
 | Observability via `structlog` in `utils.py` | Single instrumentation point covers all agents automatically |

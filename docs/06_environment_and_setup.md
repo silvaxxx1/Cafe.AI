@@ -20,10 +20,9 @@
 
 | Variable | Description | Effect if unset |
 |---|---|---|
-| `PINECONE_API_KEY` | Pinecone project API key | DetailsAgent disabled |
-| `PINECONE_INDEX_NAME` | Name of your Pinecone index | DetailsAgent disabled |
+| `CHROMA_DB_PATH` | Path to ChromaDB index directory | Defaults to `api/chroma_db/`; DetailsAgent disabled if directory absent |
 
-Embeddings are generated **locally** using `sentence-transformers/all-MiniLM-L6-v2` — no external embedding API needed. Only `PINECONE_API_KEY` is required to enable RAG.
+No API key or external service required. RAG is enabled by running `python_code/build_index.py` once — it writes the index to disk. Embeddings are generated locally using `sentence-transformers/all-MiniLM-L6-v2`.
 
 ### Production values
 
@@ -32,7 +31,6 @@ Embeddings are generated **locally** using `sentence-transformers/all-MiniLM-L6-
 | `RUNPOD_TOKEN` | RunPod API token |
 | `RUNPOD_CHATBOT_URL` | `https://api.runpod.ai/v2/<endpoint_id>/openai/v1` |
 | `MODEL_NAME` | `meta-llama/Llama-3.1-8B-Instruct` |
-| `PINECONE_API_KEY` | Pinecone API key |
 
 ---
 
@@ -144,7 +142,7 @@ npm run android      # Requires Android emulator or device + Expo Go
 pandas>=2.1.0            # popularity_recommendation.csv loading
 python-dotenv==1.0.1     # .env file loading
 openai==1.50.2           # LLM + embedding calls (OpenAI-compatible SDK)
-pinecone==5.3.1          # vector DB client (optional, DetailsAgent)
+chromadb>=0.6.0          # local vector DB (optional, DetailsAgent — no API key needed)
 httpx==0.27.2            # HTTP client — MUST be pinned, newer versions break openai async client
 fastapi==0.115.0         # local HTTP server
 uvicorn==0.30.6          # ASGI server for FastAPI

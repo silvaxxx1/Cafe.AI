@@ -33,7 +33,7 @@
 | Feature | What it does |
 |---------|--------------|
 | 🧠 **Multi-agent pipeline** | Guard → Classification → Details / Order / Recommendation |
-| 🔍 **RAG (Retrieval-Augmented Generation)** | Answers menu & shop questions via Pinecone vector DB |
+| 🔍 **RAG (Retrieval-Augmented Generation)** | Answers menu & shop questions via ChromaDB (local, no API key) |
 | 📝 **Smart ordering** | Multi-turn conversation with menu validation and persistent state |
 | 🎯 **Personalized recommendations** | Apriori market basket analysis + popularity rankings |
 | 📱 **React Native app** | Browse menu, chat, review cart — one unified flow |
@@ -67,7 +67,7 @@ React Native App (Expo)
         │
         ├── ClassificationAgent  → routes intent
         │
-        └── DetailsAgent         → RAG: sentence-transformers → Pinecone → LLM
+        └── DetailsAgent         → RAG: sentence-transformers → ChromaDB (local) → LLM
             OrderTakingAgent     → multi-turn order + auto-upsell
             RecommendationAgent  → Apriori / popularity rankings
                 │
@@ -85,7 +85,7 @@ React Native App (Expo)
 |-------|------------|-----|
 | **LLM** | Groq API (`llama-3.3-70b`) | Free tier, fast inference |
 | **Embeddings** | sentence-transformers (all-MiniLM-L6-v2) | Runs locally, no API cost |
-| **Vector DB** | Pinecone | Free serverless index |
+| **Vector DB** | ChromaDB | Local persistent index — no API key, no account |
 | **Backend** | Python 3.12 + FastAPI | Async, type-safe |
 | **Frontend** | React Native + Expo Router | Cross-platform, hot reload |
 | **Styling** | NativeWind (Tailwind) | Utility-first, rapid UI |
@@ -220,20 +220,21 @@ Evals hit the real LLM and report per-case PASS/FAIL with a pass rate. Exit 1 if
 
 ## 🔧 Advanced Setup
 
-### Pinecone (RAG Q&A)
+### ChromaDB (RAG Q&A)
+
+No account or API key needed — the index lives on disk.
 
 ```bash
-# 1. Create a free account at pinecone.io
-# 2. Add to python_code/api/.env:
-PINECONE_API_KEY=your-pinecone-key
-PINECONE_INDEX_NAME=coffeeshop
-
-# 3. Build the index (runs locally — no API calls)
+# 1. Build the index (runs locally, ~30 seconds)
 cd coffee_shop_customer_service_chatbot/python_code
-jupyter notebook build_vector_database.ipynb
+python build_index.py
+# → Writes index to api/chroma_db/
+
+# 2. Restart the backend
+# → [DetailsAgent] RAG enabled — local embeddings + ChromaDB.
 ```
 
-Uses `sentence-transformers/all-MiniLM-L6-v2` locally. Without Pinecone, `DetailsAgent` is gracefully disabled and the rest of the app functions normally.
+Uses `sentence-transformers/all-MiniLM-L6-v2` for embeddings locally. Without the index, `DetailsAgent` is gracefully disabled and the rest of the app functions normally.
 
 ### Firebase (live product catalog)
 
@@ -345,8 +346,7 @@ Cafe.AI/
 | `RUNPOD_TOKEN` | ✅ Yes | Your Groq API key (legacy name — works for any provider) |
 | `RUNPOD_CHATBOT_URL` | ✅ Yes | `https://api.groq.com/openai/v1` |
 | `MODEL_NAME` | ✅ Yes | `llama-3.3-70b-versatile` |
-| `PINECONE_API_KEY` | ❌ Optional | Enables RAG in DetailsAgent |
-| `PINECONE_INDEX_NAME` | ❌ Optional | Pinecone index name |
+| `CHROMA_DB_PATH` | ❌ Optional | Path to ChromaDB index (default: `api/chroma_db/`). Run `build_index.py` once to create it. |
 
 ### Firebase Seeding (`python_code/.env`)
 
@@ -393,7 +393,7 @@ Cafe.AI/
 - [x] `make test-all` — runs backend + frontend suites in sequence
 
 **V3 — Possible Next Steps**
-- [ ] Wire up Pinecone RAG — DetailsAgent code ready; needs Pinecone index + API key
+- [x] Wire up RAG — ChromaDB local index, no API key; run `build_index.py` once to enable
 - [ ] Cart → agent context — agent awareness of items added via browse screen
 - [ ] Product images for menu/details agent responses
 
@@ -410,7 +410,7 @@ MIT — free for personal and commercial use.
 ## 🙏 Acknowledgments
 
 - [Groq](https://groq.com) for free, fast LLM inference
-- [Pinecone](https://pinecone.io) for serverless vector storage
+- [ChromaDB](https://www.trychroma.com) for local vector storage
 - [Expo](https://expo.dev) for React Native tooling
 - [Firebase](https://firebase.google.com) for real-time product catalog
 

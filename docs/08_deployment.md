@@ -55,11 +55,7 @@ RUNPOD_CHATBOT_URL=https://api.groq.com/openai/v1
 MODEL_NAME=llama-3.3-70b-versatile
 ```
 
-Optional (for RAG — Stage 4 V2):
-```
-PINECONE_API_KEY=your-pinecone-key
-PINECONE_INDEX_NAME=coffeeshop
-```
+Optional (for RAG): run `python_code/build_index.py` locally to generate `api/chroma_db/`. Include the directory in your Docker image — no API key needed.
 
 ### 1.3 Add Persistent Disk (for SQLite sessions)
 

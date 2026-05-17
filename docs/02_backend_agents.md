@@ -129,7 +129,7 @@ Defaults to `order_taking_agent` on parse failure — the most common user actio
 
 **Purpose:** RAG-powered Q&A about coffee shop details (hours, location, ingredients, menu descriptions).
 
-**RAG enabled when:** `PINECONE_API_KEY` is set. Embeddings are generated locally using `sentence-transformers/all-MiniLM-L6-v2` (no external embedding API needed).
+**RAG enabled when:** `api/chroma_db/` directory exists (run `python_code/build_index.py` once). Embeddings are generated locally using `sentence-transformers/all-MiniLM-L6-v2` — no API key or external service needed.
 
 **RAG disabled behavior:** Returns a fallback message:
 > "I don't have detailed product info available right now, but I'd be happy to help you place an order or give you a recommendation!"
@@ -138,7 +138,7 @@ Defaults to `order_taking_agent` on parse failure — the most common user actio
 ```
 User message
   → get_embedding(user_message)          # embed the question
-  → Pinecone index.query(vector, top_k=2) # nearest 2 chunks
+  → ChromaDB collection.query(vector, top_k=2) # nearest 2 chunks
   → source_knowledge = join(chunk texts)
   → Build prompt:
       "Using the contexts below, answer the query.
@@ -148,7 +148,7 @@ User message
   → Return plain text response
 ```
 
-**Pinecone query:** namespace=`"ns1"`, `top_k=2`, includes metadata but not raw vectors. The `text` field in metadata is the chunk content.
+**ChromaDB query:** `collection.query(query_embeddings=[...], n_results=2)` — returns document strings directly. Index lives at `api/chroma_db/` on disk.
 
 **Returned memory shape:**
 ```json
