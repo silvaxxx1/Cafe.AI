@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com)
 [![React Native](https://img.shields.io/badge/React%20Native-Expo-blue.svg)](https://expo.dev)
 [![Groq](https://img.shields.io/badge/Groq-llama--3.3-orange.svg)](https://groq.com)
-[![Tests](https://img.shields.io/badge/tests-120%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-160%20passing-brightgreen.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Open Source](https://img.shields.io/badge/open%20source-yes-brightgreen.svg)]()
 
@@ -40,7 +40,11 @@
 | ⚡ **SSE streaming** | Responses stream token-by-token via `POST /chat/stream`; first token at ~1s |
 | 💾 **Session persistence** | SQLite-backed sessions; conversation restores on reload; "New chat" to reset |
 | 🔄 **Provider-agnostic LLM** | Swap Groq, RunPod, or OpenAI with a single `.env` change |
-| ✅ **120 passing tests** | Unit + eval runners — no API key needed for unit tests |
+| ✅ **160 passing tests** | 126 backend (pytest) + 34 frontend (Jest) — no API key needed for unit tests |
+| 🔍 **Live search** | Filter menu by name in real time, combined with category chips |
+| 📐 **Size selection** | S / M / L adjusts price live on the detail screen; size-adjusted totals in cart |
+| 🖼️ **Products in chat** | Image cards appear below recommendation and order-confirmation bubbles |
+| 🛒 **Smart cart merge** | Chat orders merge with browse-screen adds — no more cart-wipe on agent response |
 | 📊 **Observability dashboard** | Live `/dashboard` — latency, tokens, routing, guard block rate |
 | 🧪 **LLM evals** | Guard, classification, recommendation accuracy tested against real LLM |
 | 🖼️ **Bundled product images** | Served from local assets — no Firebase Storage required |
@@ -86,7 +90,7 @@ React Native App (Expo)
 | **Frontend** | React Native + Expo Router | Cross-platform, hot reload |
 | **Styling** | NativeWind (Tailwind) | Utility-first, rapid UI |
 | **Recommendations** | scikit-learn (Apriori) | Market basket analysis |
-| **Testing** | pytest + AsyncMock | 120 tests, no API key needed for unit tests |
+| **Testing** | pytest + jest-expo | 126 backend + 34 frontend, no API key needed for unit tests |
 | **Observability** | structlog + Chart.js dashboard | Structured logs + live `/dashboard` |
 | **Product catalog** | Firebase Realtime DB | Live product data |
 | **Product images** | Bundled local assets | No Firebase Storage required |
@@ -178,22 +182,22 @@ curl -N -X POST http://localhost:8000/chat/stream \
 ## 🧪 Testing
 
 ```bash
-cd python_code/api
+# Backend unit tests (no API key needed)
+make test          # 126 pytest tests
 
-# Unit tests (no API key needed)
-python -m pytest tests/ -v
+# Frontend unit tests
+make test-frontend # 34 Jest tests (CartContext, MessageItem, SizesSection, productService)
 
-# LLM evals (requires .env with valid Groq key)
-python -m tests.evals.eval_guard
-python -m tests.evals.eval_classification
-python -m tests.evals.eval_recommendation
+# Both suites in sequence
+make test-all
 
-# Or run everything
-make test   # unit tests
-make evals  # LLM evals
+# LLM evals (requires valid Groq key in .env)
+make evals
 ```
 
-120 unit tests cover all agents, the server (including streaming and session endpoints), and the eval runner logic. All LLM calls are mocked with `AsyncMock` — no API key needed.
+**126 backend tests** cover all agents, the server (streaming and session endpoints), and eval runner logic. All LLM calls are mocked with `AsyncMock` — no API key needed.
+
+**34 frontend tests** cover CartContext (13), MessageItem (12), SizesSection (8), and productService (4).
 
 Evals hit the real LLM and report per-case PASS/FAIL with a pass rate. Exit 1 if below 80%.
 
@@ -315,7 +319,7 @@ Cafe.AI/
     │   │   ├── recommendation_agent.py
     │   │   ├── agent_protocol.py     # async Protocol
     │   │   └── utils.py
-    │   ├── tests/                 # 120 tests ✅ (unit + eval runners)
+    │   ├── tests/                 # 126 tests ✅ (unit + eval runners)
     │   ├── recommendation_objects/
     │   ├── local_server.py        # Dev server (async FastAPI)
     │   ├── main.py                # RunPod entry point
@@ -376,16 +380,22 @@ Cafe.AI/
 - [x] Production hardening — rate limiting, CORS, startup validation, typed input
 - [x] CI/CD — GitHub Actions on every push
 
-**V2 — Coming Soon 🚧**
-- [ ] Product images inline in chat responses
-- [ ] Functional search and size selection in the frontend
-- [ ] Fix cart-wipe bug when order agent responds
-- [ ] RecommendationAgent turn memory — no more repeated suggestions
-- [ ] Wider guard/classification context window (3 → 6 messages)
-- [ ] Response variation for RecommendationAgent (`temperature=0.7`)
-- [ ] Wire up Pinecone so DetailsAgent answers product questions via RAG
-- [ ] Full TypeScript types for agent memory shapes
-- [ ] Frontend tests — CartContext, MessageItem, productService (Jest + jest-expo)
+**V2 — Complete ✅**
+- [x] Live search — filters menu by name in real time, combined with category chips
+- [x] Size selection — S/M/L adjusts price live; size-adjusted totals flow through cart
+- [x] Product images in chat — cards below recommendation and final-order bubbles, tappable to detail
+- [x] Fix cart-wipe bug — `syncCartFromOrder` merges LLM orders without wiping browse-screen adds
+- [x] RecommendationAgent turn memory — `last_recommendations` stored; repeats avoided next turn
+- [x] Wider context window — `CONTEXT_WINDOW=6` across guard, classification, recommendation
+- [x] Response variation — `temperature=0.7` on recommendation language calls
+- [x] Full TypeScript types — `AgentMemory` union replacing `memory?: any` everywhere
+- [x] Frontend tests — CartContext (13), MessageItem (12), SizesSection (8), productService (4)
+- [x] `make test-all` — runs backend + frontend suites in sequence
+
+**V3 — Possible Next Steps**
+- [ ] Wire up Pinecone RAG — DetailsAgent code ready; needs Pinecone index + API key
+- [ ] Cart → agent context — agent awareness of items added via browse screen
+- [ ] Product images for menu/details agent responses
 
 See [`V2_PLAN.md`](../V2_PLAN.md) for the full breakdown with file references and implementation details.
 
