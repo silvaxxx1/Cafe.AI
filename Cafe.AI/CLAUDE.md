@@ -136,10 +136,10 @@ Production hardening:
 ### Frontend (React Native / Expo Router)
 
 File-based routing under `app/`:
-- `(tabs)/home.tsx` — menu browse, category filter, add to cart
-- `(tabs)/chatRoom.tsx` — chat UI; streams responses via `POST /chat/stream`; loads prior session on mount; auto-fills cart when `memory.order` is present; "New chat" button clears session
-- `(tabs)/order.tsx` — cart review and checkout
-- `details.tsx` — product detail screen
+- `(tabs)/home.tsx` — menu browse, category + live search filter, add to cart
+- `(tabs)/chatRoom.tsx` — chat UI; streams via `POST /chat/stream`; loads prior session on mount; syncs cart via `syncCartFromOrder` (preserves manually-added items); shows product image cards below recommendation and final-order bubbles; "New chat" button clears session
+- `(tabs)/order.tsx` — cart review and checkout; uses `cartPrices` for size-adjusted totals
+- `details.tsx` — product detail; S/M/L size selection adjusts price live via `SIZE_MODIFIERS`
 
 `constants/productImages.ts` maps image filenames (stored in Firebase) to local `require()` bundled assets — no remote image URLs needed.
 
@@ -153,7 +153,8 @@ User sends message (chatRoom.tsx)
   → agent pipeline: Guard → Classification → Agent
   → returns { role, content, memory: { agent, order, ... } }
   → UI appends message
-  → if memory.order exists → CartContext.addToCart()
+  → if memory.order exists → CartContext.syncCartFromOrder()
+  → if recommendation or final order → MessageItem renders product image cards
 ```
 
 ### Production Deployment

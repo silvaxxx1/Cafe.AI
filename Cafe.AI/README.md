@@ -47,4 +47,16 @@ See **[coffee_shop_customer_service_chatbot/README.md](coffee_shop_customer_serv
 
 ---
 
+---
+
+## Roadmap
+
+**V1 — Complete ✅** — all 9 backend upgrade stages done. Async, streaming, sessions, observability, evals, hardening, CI.
+
+**V2 — Coming Soon 🚧** — frontend functional parity (search, sizes, cart-wipe fix, product images in chat), AI quality improvements (recommendation memory, wider context window, response variation), type safety cleanup, and Pinecone RAG.
+
+See [`V2_PLAN.md`](V2_PLAN.md) for the full plan with file references.
+
+---
+
 **Built with ☕ and 🤖 by [SilvaLAB](https://github.com/silvaxxx1)**
