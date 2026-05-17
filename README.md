@@ -391,11 +391,12 @@ Cafe.AI/
 - [x] Full TypeScript types — `AgentMemory` union replacing `memory?: any` everywhere
 - [x] Frontend tests — CartContext (13), MessageItem (12), SizesSection (8), productService (4)
 - [x] `make test-all` — runs backend + frontend suites in sequence
+- [x] RAG — ChromaDB local index (no API key); `build_index.py` populates `api/chroma_db/` in ~30s
 
 **V3 — Possible Next Steps**
-- [x] Wire up RAG — ChromaDB local index, no API key; run `build_index.py` once to enable
 - [ ] Cart → agent context — agent awareness of items added via browse screen
-- [ ] Product images for menu/details agent responses
+- [ ] Product images on menu/details agent responses
+- [ ] Multi-tenant deployment — one backend serving multiple café clients
 
 See [`V2_PLAN.md`](../V2_PLAN.md) for the full breakdown with file references and implementation details.
 
