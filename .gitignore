@@ -4,3 +4,6 @@
 
 # Runtime data
 sessions.db
+
+# ChromaDB local vector index — built by build_index.py, not committed
+python_code/api/chroma_db/
