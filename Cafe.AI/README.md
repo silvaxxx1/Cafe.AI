@@ -27,7 +27,7 @@ coffee_shop_customer_service_chatbot/
 ## Highlights
 
 - **Multi-agent pipeline** — Guard → Classification → Details / Order / Recommendation
-- **RAG** — Pinecone vector search for menu & shop questions (optional, gracefully disabled)
+- **RAG** — ChromaDB local vector search for menu & shop questions (optional, no API key needed)
 - **Smart ordering** — Multi-turn conversation, menu validation, automatic upsell
 - **Apriori recommendations** — Market basket analysis from order history
 - **React Native app** — Runs on iOS, Android, and web (Expo Router)
@@ -59,7 +59,7 @@ See **[coffee_shop_customer_service_chatbot/README.md](coffee_shop_customer_serv
 
 **V2 — Complete ✅** — live search, functional size selection, product image cards in chat, cart-merge fix, recommendation turn memory, wider context window, response variation, AgentMemory types, 34 frontend tests.
 
-**V3 — Possible next** — Pinecone RAG wiring, cart→agent context awareness, images on menu/details responses.
+**V3 — Possible next** — cart→agent context awareness, product images on menu/details responses, multi-tenant SaaS deployment.
 
 See [`V2_PLAN.md`](V2_PLAN.md) for the full plan with file references.
 

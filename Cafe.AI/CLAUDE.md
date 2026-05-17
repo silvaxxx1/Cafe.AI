@@ -11,7 +11,7 @@ Cafe.AI is a full-stack AI-powered coffee shop chatbot with a React Native mobil
 All source lives under `coffee_shop_customer_service_chatbot/`:
 - `coffee_shop_app/` — React Native (Expo) mobile app
 - `python_code/api/` — Python multi-agent backend
-- `python_code/` (root notebooks) — Data pipeline: seed Firebase, train recommendation models, build Pinecone index
+- `python_code/` (root notebooks) — Data pipeline: seed Firebase, train recommendation models, build ChromaDB index
 
 ## Local Dev Setup (free, no RunPod needed)
 
@@ -62,7 +62,7 @@ npm run android  # requires Android emulator or device + Expo Go
 - `RUNPOD_TOKEN` — Groq API key (local) or RunPod token (production)
 - `RUNPOD_CHATBOT_URL` — `https://api.groq.com/openai/v1` (Groq) or RunPod endpoint
 - `MODEL_NAME` — `llama-3.3-70b-versatile` (Groq) or `meta-llama/Llama-3.1-8B-Instruct` (RunPod)
-- `PINECONE_API_KEY`, `PINECONE_INDEX_NAME` — optional; required only for RAG (DetailsAgent gracefully disables when unset)
+- `CHROMA_DB_PATH` — optional; defaults to `api/chroma_db/`. RAG enabled when the directory exists (run `build_index.py` once to populate it). DetailsAgent gracefully disables when absent.
 
 **Backend seeding** — `python_code/.env`:
 - All `FIREBASE_*` fields from the Firebase service account JSON
@@ -104,7 +104,7 @@ All agents implement `agent_protocol.py` with an `async get_response(messages)` 
 **Agent responsibilities:**
 - `guard_agent.py` — Safety filter; returns `allowed`/`not allowed`
 - `classification_agent.py` — Intent detection; picks which agent handles the turn
-- `details_agent.py` — RAG: embed query locally (sentence-transformers) → Pinecone → LLM answer. **Gracefully disabled** when `PINECONE_API_KEY` is unset
+- `details_agent.py` — RAG: embed query locally (sentence-transformers) → ChromaDB (local disk) → LLM answer. **Gracefully disabled** when `api/chroma_db/` directory is absent (run `build_index.py` once)
 - `order_taking_agent.py` — Multi-turn order collection, menu validation, triggers recommendation upsell automatically before closing
 - `recommendation_agent.py` — Apriori (market basket) or popularity rankings, loaded from static files at startup
 

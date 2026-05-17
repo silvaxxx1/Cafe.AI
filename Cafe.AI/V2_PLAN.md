@@ -376,15 +376,14 @@ projectId: process.env.EXPO_PUBLIC_FIREBASE_PROHECT_Id  // typo
 
 ## Stage 4 — Stretch: Wire Up DetailsAgent (RAG)
 
-*Currently gracefully disabled when `PINECONE_API_KEY` is unset. V2 makes it real.*
+*Gracefully disabled when `api/chroma_db/` directory is absent. Complete with one command.*
 
-`DetailsAgent` embeds queries locally with sentence-transformers and queries Pinecone. The code is written — it just needs a Pinecone index populated.
+`DetailsAgent` embeds queries locally with sentence-transformers and queries ChromaDB (local disk). No external service or API key needed.
 
 **Steps:**
-1. Create a free Pinecone index
-2. Run `python_code/build_index.py` to embed and upload `products/fero_cafe_about_us.txt` + product descriptions
-3. Set `PINECONE_API_KEY` and `PINECONE_INDEX_NAME` in `.env`
-4. Verify: ask the chatbot "what's your sourcing story?" and confirm it retrieves from the index
+1. Run `cd python_code && python build_index.py` — builds and writes the index to `api/chroma_db/`
+2. Restart the backend — DetailsAgent prints "RAG enabled"
+3. Verify: ask the chatbot "what's your sourcing story?" and confirm it retrieves from the index
 
 **Done when:** DetailsAgent returns RAG-grounded answers about the cafe and products, not just LLM hallucination.
 
@@ -549,7 +548,7 @@ Aim for these 3 files as the V2 baseline — they cover the most critical state 
 | 4 — RAG | DetailsAgent actually answers product questions | P3 — stretch feature |
 | 5 — Frontend tests | CartContext, MessageItem, productService — closes the senior gap | P1 — credibility signal |
 
-**Start with Stage 1.** Stages 2, 3, and 5 can be done in any order after that. Stage 4 requires external infrastructure (Pinecone account).
+**Start with Stage 1.** Stages 2, 3, and 5 can be done in any order after that. Stage 4 requires only running `build_index.py` locally — no external account needed.
 
 ---
 
