@@ -137,6 +137,8 @@ Navigation to details: `router.push({ pathname: '/details', params: { ...product
 
 **Cart sync (`syncCartFromOrder`):** The LLM returns the complete current order on every turn. `syncCartFromOrder` updates only the LLM-managed cart slots — manually added items from the browse screen are preserved. Items the user removed via chat are deleted from the cart.
 
+**Product image cards:** On mount, `chatRoom.tsx` calls `fetchProducts()` (cached — hits Firebase once) and builds a `Record<string, Product>` keyed by normalised product name. This map is passed to `MessageList` → `MessageItem`. For `recommendation_agent` responses, `MessageItem` renders a horizontal scrollable strip of product image cards below the text bubble (tappable → `/details`). For `order_taking_agent` step-6 responses (final order confirmation), cards show the completed order items.
+
 **Layout:**
 - `PageHeader` at top (title "Chat Bot")
 - `MessageList` (scrollable, auto-scrolls to bottom)
@@ -167,9 +169,11 @@ Reads all data from route params (no second Firebase call):
 const { name, image_url, type, description, price, rating } = useLocalSearchParams()
 ```
 
-Components used: `DetailsHeader`, `DescriptionSection`, `SizesSection` (static, no real size logic).
+Components used: `DetailsHeader`, `DescriptionSection`, `SizesSection` (functional — size selection adjusts price live).
 
-"Buy Now" = `addToCart(name, 1)` + Toast + `router.back()`.
+`SizesSection` exports `SIZE_MODIFIERS = { S: -$0.50, M: $0, L: +$0.50 }`. `details.tsx` computes `adjustedPrice = basePrice + SIZE_MODIFIERS[selectedSize]` and displays it live in the action bar.
+
+"Add to Bag" = `addToCart(name, 1, adjustedPrice)` + Toast showing size ("Cappuccino (L) added") + `router.back()`.
 
 ---
 
@@ -250,7 +254,7 @@ const API_KEY = process.env.EXPO_PUBLIC_RUNPOD_API_KEY as string;
 
 Only initializes Firebase if `EXPO_PUBLIC_FIREBASE_DATABASE_URL` is set. Exports `fireBaseDB: Database | null`.
 
-Note: `EXPO_PUBLIC_FIREBASE_PROHECT_Id` — the env var name has a typo ("PROHECT" instead of "PROJECT"). Both the env example and the config use this same typo, so they match. Do not fix one without fixing the other.
+All env vars use the correct spelling. `EXPO_PUBLIC_FIREBASE_PROJECT_ID` is correct in `firebaseConfig.ts`, `.env_example.txt`, and `.env`.
 
 ---
 

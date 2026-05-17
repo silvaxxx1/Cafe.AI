@@ -86,6 +86,27 @@ test('syncCartFromOrder does not remove manually-added items on subsequent sync'
   expect(result.current.cartItems['cappuccino']).toBe(2);
 });
 
+// ── price overrides ───────────────────────────────────────────────────────────
+
+test('addToCart stores price override in cartPrices', () => {
+  const { result } = renderHook(() => useCart(), { wrapper });
+  act(() => result.current.addToCart('Cappuccino', 1, 5.00));
+  expect(result.current.cartPrices['cappuccino']).toBe(5.00);
+});
+
+test('addToCart without price leaves cartPrices unchanged', () => {
+  const { result } = renderHook(() => useCart(), { wrapper });
+  act(() => result.current.addToCart('Latte', 1));
+  expect(result.current.cartPrices['latte']).toBeUndefined();
+});
+
+test('emptyCart clears cartPrices', () => {
+  const { result } = renderHook(() => useCart(), { wrapper });
+  act(() => result.current.addToCart('Cappuccino', 1, 5.00));
+  act(() => result.current.emptyCart());
+  expect(result.current.cartPrices).toEqual({});
+});
+
 test('emptyCart resets LLM tracking so next sync starts clean', () => {
   const { result } = renderHook(() => useCart(), { wrapper });
   act(() => result.current.syncCartFromOrder([{ item: 'Cappuccino', quantity: 1 }]));

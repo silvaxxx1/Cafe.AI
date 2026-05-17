@@ -14,19 +14,29 @@ const fetchProducts = async (): Promise<Product[]> => {
       console.warn('[productService] Firebase not configured — returning empty product list.');
       return [];
     }
-    const snapshot = await get(ref(fireBaseDB, 'products'));
-    const data = snapshot.val();
-    const products: Product[] = [];
-    if (data) {
-      for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          products.push({ ...data[key] });
+    try {
+      const snapshot = await get(ref(fireBaseDB, 'products'));
+      const data = snapshot.val();
+      const products: Product[] = [];
+      if (data) {
+        for (const key in data) {
+          if (Object.prototype.hasOwnProperty.call(data, key)) {
+            products.push({ ...data[key] });
+          }
         }
       }
+      cache = products;
+      inflight = null;
+      return products;
+    } catch (err: any) {
+      inflight = null;
+      if (err?.code === 'PERMISSION_DENIED') {
+        console.error('[productService] Firebase permission denied. Set Realtime Database rules to allow ".read": true on /products.');
+      } else {
+        console.error('[productService] Failed to fetch products:', err?.message ?? err);
+      }
+      return [];
     }
-    cache = products;
-    inflight = null;
-    return products;
   })();
 
   return inflight;

@@ -1,16 +1,17 @@
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import React, { useRef, useEffect } from 'react';
 import MessageItem from './MessageItem';
-import { MessageInterface } from '@/types/types';
+import { MessageInterface, Product } from '@/types/types';
 import TypingIndicator from '@/components/TypingIndicator';
 import { useTheme } from '@/constants/theme';
 
 interface MessageListProps {
   messages: MessageInterface[];
   isTyping: boolean;
+  productMap?: Record<string, Product>;
 }
 
-const MessageList = ({ messages, isTyping = false }: MessageListProps) => {
+const MessageList = ({ messages, isTyping = false, productMap = {} }: MessageListProps) => {
   const scrollViewRef = useRef<ScrollView | null>(null);
   const theme = useTheme();
 
@@ -25,7 +26,7 @@ const MessageList = ({ messages, isTyping = false }: MessageListProps) => {
       contentContainerStyle={styles.content}
     >
       {messages.map((message, index) => (
-        <MessageItem key={index} message={message} />
+        <MessageItem key={index} message={message} productMap={productMap} />
       ))}
 
       {isTyping && (

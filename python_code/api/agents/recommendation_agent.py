@@ -170,7 +170,7 @@ class RecommendationAgent():
         input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
         chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages)
-        return self.postprocess(chatbot_output)
+        return self.postprocess(chatbot_output, recommendations)
 
     def postprocess_classfication(self, output):
         try:

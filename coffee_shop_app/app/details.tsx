@@ -1,5 +1,5 @@
 import { Text, View, TouchableOpacity, ScrollView, StatusBar, StyleSheet } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { router } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
@@ -7,13 +7,14 @@ import PageHeader from '@/components/PageHeader';
 import { useCart } from '@/components/CartContext';
 import Toast from 'react-native-root-toast';
 import DescriptionSection from '@/components/DescriptionSection';
-import SizesSection from '@/components/SizesSection';
+import SizesSection, { SIZE_MODIFIERS } from '@/components/SizesSection';
 import DetailsHeader from '@/components/DetailsHeader';
 import { useTheme } from '@/constants/theme';
 
 const DetailsPage = () => {
   const { addToCart } = useCart();
   const theme = useTheme();
+  const [selectedSize, setSelectedSize] = useState('M');
 
   const { name, image_url, type, description, price, rating } = useLocalSearchParams() as {
     name: string;
@@ -24,9 +25,12 @@ const DetailsPage = () => {
     rating: string;
   };
 
+  const basePrice = parseFloat(price);
+  const adjustedPrice = basePrice + SIZE_MODIFIERS[selectedSize];
+
   const handleAddToBag = () => {
-    addToCart(name, 1);
-    Toast.show(`${name} added to your bag`, { duration: Toast.durations.SHORT });
+    addToCart(name, 1, adjustedPrice);
+    Toast.show(`${name} (${selectedSize}) added to your bag`, { duration: Toast.durations.SHORT });
     router.back();
   };
 
@@ -47,7 +51,7 @@ const DetailsPage = () => {
             rating={Number(rating)}
           />
           <DescriptionSection description={description} />
-          <SizesSection />
+          <SizesSection selectedSize={selectedSize} onSizeChange={setSelectedSize} />
           <View style={{ height: 120 }} />
         </ScrollView>
 
@@ -55,7 +59,7 @@ const DetailsPage = () => {
         <View style={[styles.actionBar, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
           <View>
             <Text style={[styles.priceLabel, { color: theme.textFaint }]}>Price</Text>
-            <Text style={[styles.priceValue, { color: theme.accent }]}>${price}</Text>
+            <Text style={[styles.priceValue, { color: theme.accent }]}>${adjustedPrice.toFixed(2)}</Text>
           </View>
 
           <TouchableOpacity
@@ -63,7 +67,7 @@ const DetailsPage = () => {
             onPress={handleAddToBag}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel={`Add ${name} to bag`}
+            accessibilityLabel={`Add ${name} (${selectedSize}) to bag`}
           >
             <Text style={[styles.addBtnText, { color: theme.onAccent }]}>Add to Bag</Text>
           </TouchableOpacity>

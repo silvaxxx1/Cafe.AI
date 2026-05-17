@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet } from 'react
 import { Product } from '@/types/types';
 import productImages from '@/constants/productImages';
 import { useTheme } from '@/constants/theme';
+import { useCart } from '@/components/CartContext';
 
 interface ProductListProps {
   products: Product[];
@@ -12,6 +13,7 @@ interface ProductListProps {
 
 const ProductList: React.FC<ProductListProps> = ({ products, quantities, setQuantities }) => {
   const theme = useTheme();
+  const { cartPrices } = useCart();
   const filteredProducts = products.filter((p) => (quantities[p.name.trim().toLowerCase()] || 0) > 0);
 
   const renderItem = ({ item }: { item: Product }) => (
@@ -24,7 +26,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, quantities, setQuan
       <View style={styles.info}>
         <Text style={[styles.name, { color: theme.text }]} numberOfLines={2}>{item.name}</Text>
         <Text style={[styles.category, { color: theme.textFaint }]}>{item.category}</Text>
-        <Text style={[styles.price, { color: theme.accent }]}>${(item.price * (quantities[item.name.trim().toLowerCase()] || 0)).toFixed(2)}</Text>
+        <Text style={[styles.price, { color: theme.accent }]}>${((cartPrices[item.name.trim().toLowerCase()] ?? item.price) * (quantities[item.name.trim().toLowerCase()] || 0)).toFixed(2)}</Text>
       </View>
       <View style={styles.qtyControls}>
         <TouchableOpacity

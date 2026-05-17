@@ -65,8 +65,8 @@ const Home = () => {
     loadProducts();
   }, [retryCount]);
 
-  const handleAdd = useCallback((name: string) => {
-    addToCart(name, 1);
+  const handleAdd = useCallback((name: string, price: number) => {
+    addToCart(name, 1, price);
     Toast.show(`${name} added`, { duration: Toast.durations.SHORT });
   }, [addToCart]);
 
@@ -102,7 +102,7 @@ const Home = () => {
         <View style={styles.cardFooter}>
           <Text style={[styles.cardPrice, { color: theme.accent }]}>${item.price}</Text>
           <TouchableOpacity
-            onPress={() => handleAdd(item.name)}
+            onPress={() => handleAdd(item.name, item.price)}
             style={[styles.addBtn, { backgroundColor: theme.accent }]}
             activeOpacity={0.8}
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}

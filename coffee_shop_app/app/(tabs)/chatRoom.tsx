@@ -1,12 +1,12 @@
 import { TouchableOpacity, View, Text, KeyboardAvoidingView, Platform, StyleSheet, StatusBar } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import MessageList from '@/components/MessageList';
-import { MessageInterface } from '@/types/types';
+import { MessageInterface, Product, AgentMemory } from '@/types/types';
 import { GestureHandlerRootView, TextInput } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { callChatBotStreamAPI, clearSession, getSessionId, loadSession } from '@/services/chatBot';
+import { fetchProducts } from '@/services/productService';
 import { useCart } from '@/components/CartContext';
-import { AgentMemory } from '@/types/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '@/constants/theme';
@@ -19,6 +19,7 @@ const ChatRoom = () => {
   const [messages, setMessages] = useState<MessageInterface[]>([]);
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [sessionLoading, setSessionLoading] = useState<boolean>(true);
+  const [productMap, setProductMap] = useState<Record<string, Product>>({});
   const textRef = useRef('');
   const inputRef = useRef<TextInput>(null);
   const sessionIdRef = useRef<string>(getSessionId());
@@ -27,6 +28,11 @@ const ChatRoom = () => {
     loadSession().then((saved) => {
       if (saved.length > 0) setMessages(saved);
       setSessionLoading(false);
+    });
+    fetchProducts().then((products) => {
+      const map: Record<string, Product> = {};
+      for (const p of products) map[p.name.trim().toLowerCase()] = p;
+      setProductMap(map);
     });
   }, []);
 
@@ -140,7 +146,7 @@ const ChatRoom = () => {
                 </Text>
               </View>
             )}
-            <MessageList messages={messages} isTyping={isTyping} />
+            <MessageList messages={messages} isTyping={isTyping} productMap={productMap} />
           </View>
 
           {/* Input bar */}

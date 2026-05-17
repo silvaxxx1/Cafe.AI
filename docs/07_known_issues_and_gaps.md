@@ -86,9 +86,9 @@ Both `get_response()` and `get_stream_response()` now include a `memory` key on 
 
 `SearchArea` now accepts an `onSearch` callback and renders a real `TextInput`. `home.tsx` passes `setSearchQuery` and filters `shownProducts` by both category and search query in real time.
 
-### 17. `SizesSection` Component is Static
+### ~~17. `SizesSection` Component is Static~~ ✅ Fixed
 
-`components/SizesSection.tsx` renders size options (S/M/L) but doesn't affect the cart or price. Size selection is decorative only.
+`SizesSection` is now a controlled component with `selectedSize` / `onSizeChange` props. Exports `SIZE_MODIFIERS = { S: -$0.50, M: $0, L: +$0.50 }`. Each button shows the volume and price modifier. `details.tsx` tracks selected size, computes `adjustedPrice = basePrice + modifier` live, displays it in the action bar, and passes it to `addToCart`. `CartContext` stores price overrides in `cartPrices` state; `CartProductList` and `order.tsx` use the override price when computing totals.
 
 ### ~~18. Firebase Typo in Env Var Name~~ ✅ Fixed
 
@@ -110,7 +110,7 @@ Both `get_response()` and `get_stream_response()` now include a `memory` key on 
 
 Backend: 126 passing pytest tests across all agents, server, streaming, session, and eval runners (`make test`). No API key needed.
 
-Frontend: 18 passing Jest tests — `CartContext` (10), `MessageItem` (4), `productService` (4). Run with `make test-frontend`. `make test-all` runs both suites in sequence.
+Frontend: 34 passing Jest tests — `CartContext` (13), `MessageItem` (12), `SizesSection` (8), `productService` (4). Run with `make test-frontend`. `make test-all` runs both suites in sequence.
 
 ### ~~22. No Observability~~ ✅ Fixed
 

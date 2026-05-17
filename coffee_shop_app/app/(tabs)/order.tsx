@@ -15,7 +15,7 @@ import { useTheme } from '@/constants/theme';
 const DELIVERY_FEE = 1.00;
 
 const Order = () => {
-  const { cartItems, SetQuantityCart, emptyCart } = useCart();
+  const { cartItems, cartPrices, SetQuantityCart, emptyCart } = useCart();
   const theme = useTheme();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,10 +23,12 @@ const Order = () => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  const totalPrice = useMemo(
-    () => products.reduce((total, p) => total + p.price * (cartItems[p.name.trim().toLowerCase()] || 0), 0),
-    [products, cartItems]
-  );
+  const totalPrice = useMemo(() => products.reduce((total, p) => {
+    const key = p.name.trim().toLowerCase();
+    const qty = cartItems[key] || 0;
+    const price = cartPrices[key] ?? p.price;
+    return total + price * qty;
+  }, 0), [products, cartItems, cartPrices]);
 
   const itemCount = useMemo(
     () => Object.values(cartItems).reduce((sum, q) => sum + q, 0),
