@@ -57,7 +57,7 @@ See **[coffee_shop_customer_service_chatbot/README.md](coffee_shop_customer_serv
 
 **V1 — Complete ✅** — all 9 backend upgrade stages done. Async, streaming, sessions, observability, evals, hardening, CI.
 
-**V2 — Complete ✅** — live search, functional size selection, product image cards in chat, cart-merge fix, recommendation turn memory, wider context window, response variation, AgentMemory types, 34 frontend tests.
+**V2 — Complete ✅** — live search, size selection, product image cards in chat, cart-merge fix, recommendation turn memory, wider context window, response variation, AgentMemory types, 34 frontend tests, RAG via ChromaDB (local, no API key).
 
 **V3 — Possible next** — cart→agent context awareness, product images on menu/details responses, multi-tenant SaaS deployment.
 
