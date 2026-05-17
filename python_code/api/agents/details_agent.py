@@ -1,12 +1,20 @@
 from dotenv import load_dotenv
 import os
 import asyncio
-from .utils import get_chatbot_response, get_chatbot_response_stream
+from .utils import get_chatbot_response, get_chatbot_response_stream, CONTEXT_WINDOW
 from openai import AsyncOpenAI
 from copy import deepcopy
-from pinecone import Pinecone
 from sentence_transformers import SentenceTransformer
 load_dotenv()
+
+# ChromaDB imported lazily to avoid startup errors when the index doesn't exist
+try:
+    import chromadb
+    _CHROMA_AVAILABLE = True
+except ImportError:
+    _CHROMA_AVAILABLE = False
+
+_DEFAULT_CHROMA_PATH = os.path.join(os.path.dirname(__file__), "..", "chroma_db")
 
 
 class DetailsAgent():
@@ -16,27 +24,34 @@ class DetailsAgent():
             base_url=os.getenv("RUNPOD_CHATBOT_URL"),
         )
         self.model_name = os.getenv("MODEL_NAME")
+        self.rag_enabled = False
 
-        pinecone_key = os.getenv("PINECONE_API_KEY")
-        self.rag_enabled = bool(pinecone_key)
+        if not _CHROMA_AVAILABLE:
+            print("[DetailsAgent] RAG disabled — chromadb package not installed.")
+            return
 
-        if self.rag_enabled:
+        chroma_path = os.getenv("CHROMA_DB_PATH", _DEFAULT_CHROMA_PATH)
+
+        if not os.path.isdir(chroma_path):
+            print("[DetailsAgent] RAG disabled — chroma_db not found. Run python_code/build_index.py first.")
+            return
+
+        try:
             self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-            self.pc = Pinecone(api_key=pinecone_key)
-            self.index_name = os.getenv("PINECONE_INDEX_NAME")
-            print("[DetailsAgent] RAG enabled — local embeddings + Pinecone.")
-        else:
-            print("[DetailsAgent] RAG disabled — PINECONE_API_KEY not set.")
+            chroma_client = chromadb.PersistentClient(path=chroma_path)
+            self.collection = chroma_client.get_collection("coffeeshop")
+            self.rag_enabled = True
+            print("[DetailsAgent] RAG enabled — local embeddings + ChromaDB.")
+        except Exception as e:
+            print(f"[DetailsAgent] RAG disabled — could not load collection: {e}")
+            print("               Run python_code/build_index.py to build the index.")
 
-    def get_closest_results(self, index_name, embedding, top_k=2):
-        index = self.pc.Index(index_name)
-        return index.query(
-            namespace="ns1",
-            vector=embedding,
-            top_k=top_k,
-            include_values=False,
-            include_metadata=True
+    def get_closest_results(self, embedding, top_k=2):
+        results = self.collection.query(
+            query_embeddings=[embedding],
+            n_results=top_k,
         )
+        return results["documents"][0]  # list of matching text strings
 
     async def get_response(self, messages):
         messages = deepcopy(messages)
@@ -50,17 +65,14 @@ class DetailsAgent():
 
         user_message = messages[-1]['content']
 
-        # Run the sync embedding model in a thread so we don't block the event loop
         loop = asyncio.get_event_loop()
         embedding = await loop.run_in_executor(
             None,
             lambda: self.embedding_model.encode(user_message).tolist()
         )
 
-        result = self.get_closest_results(self.index_name, embedding)
-        source_knowledge = "\n".join(
-            [x['metadata']['text'].strip() + '\n' for x in result['matches']]
-        )
+        chunks = self.get_closest_results(embedding)
+        source_knowledge = "\n".join(chunk.strip() for chunk in chunks)
 
         prompt = f"""
         Using the contexts below, answer the query.
@@ -73,7 +85,7 @@ class DetailsAgent():
 
         system_prompt = "You are a customer support agent for a coffee shop called Fero Cafe. You should answer every question as if you are a waiter and provide the necessary information to the user regarding their orders."
         messages[-1]['content'] = prompt
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
         chatbot_output = await get_chatbot_response(self.client, self.model_name, input_messages)
         return self.postprocess(chatbot_output)
@@ -102,10 +114,8 @@ class DetailsAgent():
             lambda: self.embedding_model.encode(user_message).tolist()
         )
 
-        result = self.get_closest_results(self.index_name, embedding)
-        source_knowledge = "\n".join(
-            [x['metadata']['text'].strip() + '\n' for x in result['matches']]
-        )
+        chunks = self.get_closest_results(embedding)
+        source_knowledge = "\n".join(chunk.strip() for chunk in chunks)
 
         prompt = f"""
         Using the contexts below, answer the query.
@@ -118,7 +128,7 @@ class DetailsAgent():
 
         system_prompt = "You are a customer support agent for a coffee shop called Fero Cafe. You should answer every question as if you are a waiter and provide the necessary information to the user regarding their orders."
         messages[-1]['content'] = prompt
-        input_messages = [{"role": "system", "content": system_prompt}] + messages[-3:]
+        input_messages = [{"role": "system", "content": system_prompt}] + messages[-CONTEXT_WINDOW:]
 
         async for token in get_chatbot_response_stream(self.client, self.model_name, input_messages):
             yield {"type": "token", "delta": token}
